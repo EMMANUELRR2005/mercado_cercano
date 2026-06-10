@@ -1,0 +1,74 @@
+{
+  "@@locale": "en",
+  "appName": "MercadoCercano",
+  "tagline": "Market prices, in your pocket",
+  "phoneInputTitle": "What's your number?",
+  "phoneInputSubtitle": "We'll send you a verification code",
+  "sendCode": "Send code",
+  "verifyCode": "Verify code",
+  "otpInputTitle": "Enter the code",
+  "resendCode": "Resend code",
+  "iAmBuyer": "I'm a Buyer",
+  "iAmVendor": "I'm a Vendor",
+  "publishProduct": "Publish product",
+  "renewAll": "Renew all",
+  "markSoldOut": "Mark as sold out",
+  "soldOut": "Sold out",
+  "priceIndex": "Price index",
+  "nearbyVendors": "Nearby vendors",
+  "averagePriceInZone": "Average price in your area",
+  "reportPrice": "Report price",
+  "setAlert": "Create price alert",
+  "verifiedVendor": "Verified Vendor",
+  "noInternetBanner": "No connection — showing saved data",
+  "expiresIn": "Expires in {time}",
+  "@expiresIn": {
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "3h 20m"
+      }
+    }
+  },
+  "featuredPost": "Featured Post",
+  "featured": "Featured",
+  "upgradeToProTitle": "Premium Feature",
+  "upgradeToProSubtitle": "Access {featureName} with the Pro Plan",
+  "@upgradeToProSubtitle": {
+    "placeholders": {
+      "featureName": {
+        "type": "String",
+        "example": "Advanced statistics"
+      }
+    }
+  },
+  "upgradeToPro": "Upgrade to Pro",
+  "rateVendorTitle": "Rate vendor",
+  "rateVendorQuestion": "How was your experience with this vendor?",
+  "commentOptionalLabel": "Comment (optional)",
+  "submitRating": "Submit rating",
+  "ratingThanks": "Thanks for your rating!",
+  "vendorReviewsTitle": "Vendor reviews",
+  "reviewsCount": "{count, plural, =1{1 review} other{{count} reviews}}",
+  "@reviewsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "noReviewsTitle": "No reviews yet",
+  "noReviewsSubtitle": "Be the first to rate this vendor.",
+  "reportFraud": "Report fraud",
+  "retry": "Retry",
+  "reportsCount": "{count, plural, =1{1 report} other{{count} reports}}",
+  "@reportsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "23"
+      }
+    }
+  }
+}

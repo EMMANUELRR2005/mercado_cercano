@@ -1,0 +1,7 @@
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  exclude:
+    # Artefactos de build (incluye paquetes de terceros de Swift Package
+    # Manager en build/macos/SourcePackages) — no son código del proyecto.
+    - build/**

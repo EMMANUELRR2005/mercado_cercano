@@ -1,0 +1,183 @@
+{
+  "@@locale": "es",
+  "appName": "MercadoCercano",
+  "@appName": {
+    "description": "Nombre de la aplicación"
+  },
+  "tagline": "Precios del mercado, en tu bolsillo",
+  "@tagline": {
+    "description": "Eslogan de la app, se muestra en splash y onboarding"
+  },
+  "phoneInputTitle": "¿Cuál es tu número?",
+  "@phoneInputTitle": {
+    "description": "Título de la pantalla de ingreso de teléfono"
+  },
+  "phoneInputSubtitle": "Te enviaremos un código de verificación",
+  "@phoneInputSubtitle": {
+    "description": "Subtítulo de la pantalla de ingreso de teléfono"
+  },
+  "sendCode": "Enviar código",
+  "@sendCode": {
+    "description": "Botón para enviar el código OTP"
+  },
+  "verifyCode": "Verificar código",
+  "@verifyCode": {
+    "description": "Botón para verificar el código OTP"
+  },
+  "otpInputTitle": "Ingresa el código",
+  "@otpInputTitle": {
+    "description": "Título de la pantalla de OTP"
+  },
+  "resendCode": "Reenviar código",
+  "@resendCode": {
+    "description": "Botón para reenviar el código OTP"
+  },
+  "iAmBuyer": "Soy Comprador",
+  "@iAmBuyer": {
+    "description": "Opción de rol comprador"
+  },
+  "iAmVendor": "Soy Vendedor",
+  "@iAmVendor": {
+    "description": "Opción de rol vendedor"
+  },
+  "publishProduct": "Publicar producto",
+  "@publishProduct": {
+    "description": "Botón para publicar un producto nuevo"
+  },
+  "renewAll": "Renovar todo",
+  "@renewAll": {
+    "description": "Botón para renovar la vigencia de todos los productos"
+  },
+  "markSoldOut": "Marcar como agotado",
+  "@markSoldOut": {
+    "description": "Acción para marcar un producto como agotado"
+  },
+  "soldOut": "Agotado",
+  "@soldOut": {
+    "description": "Badge de producto agotado"
+  },
+  "priceIndex": "Índice de precios",
+  "@priceIndex": {
+    "description": "Título de la pantalla del índice de precios"
+  },
+  "nearbyVendors": "Vendedores cercanos",
+  "@nearbyVendors": {
+    "description": "Sección de vendedores cercanos"
+  },
+  "averagePriceInZone": "Precio promedio en tu zona",
+  "@averagePriceInZone": {
+    "description": "Etiqueta del precio promedio de la zona"
+  },
+  "reportPrice": "Reportar precio",
+  "@reportPrice": {
+    "description": "Botón para reportar un precio visto en el mercado"
+  },
+  "setAlert": "Crear alerta de precio",
+  "@setAlert": {
+    "description": "Botón para crear una alerta de precio"
+  },
+  "verifiedVendor": "Vendedor Verificado",
+  "@verifiedVendor": {
+    "description": "Insignia de vendedor verificado"
+  },
+  "noInternetBanner": "Sin conexión — mostrando datos guardados",
+  "@noInternetBanner": {
+    "description": "Banner que aparece cuando no hay conexión a internet"
+  },
+  "expiresIn": "Vence en {time}",
+  "@expiresIn": {
+    "description": "Cuenta regresiva de vencimiento de una publicación",
+    "placeholders": {
+      "time": {
+        "type": "String",
+        "example": "3h 20m"
+      }
+    }
+  },
+  "featuredPost": "Publicación Destacada",
+  "@featuredPost": {
+    "description": "Etiqueta de publicación destacada (premium)"
+  },
+  "featured": "Destacado",
+  "@featured": {
+    "description": "Badge corto de producto destacado"
+  },
+  "upgradeToProTitle": "Función Premium",
+  "@upgradeToProTitle": {
+    "description": "Título del overlay de función premium"
+  },
+  "upgradeToProSubtitle": "Accede a {featureName} con el Plan Pro",
+  "@upgradeToProSubtitle": {
+    "description": "Subtítulo del overlay de función premium",
+    "placeholders": {
+      "featureName": {
+        "type": "String",
+        "example": "Estadísticas avanzadas"
+      }
+    }
+  },
+  "upgradeToPro": "Mejorar a Pro",
+  "@upgradeToPro": {
+    "description": "Botón para mejorar al plan Pro"
+  },
+  "rateVendorTitle": "Calificar vendedor",
+  "@rateVendorTitle": {
+    "description": "Título de la pantalla para calificar a un vendedor"
+  },
+  "rateVendorQuestion": "¿Cómo fue tu experiencia con este vendedor?",
+  "@rateVendorQuestion": {
+    "description": "Pregunta principal de la pantalla de calificación"
+  },
+  "commentOptionalLabel": "Comentario (opcional)",
+  "@commentOptionalLabel": {
+    "description": "Etiqueta del campo de comentario opcional"
+  },
+  "submitRating": "Enviar calificación",
+  "@submitRating": {
+    "description": "Botón para enviar la calificación"
+  },
+  "ratingThanks": "¡Gracias por tu calificación!",
+  "@ratingThanks": {
+    "description": "Snackbar de éxito al enviar la calificación"
+  },
+  "vendorReviewsTitle": "Reseñas del vendedor",
+  "@vendorReviewsTitle": {
+    "description": "Título de la pantalla de reseñas de un vendedor"
+  },
+  "reviewsCount": "{count, plural, =1{1 reseña} other{{count} reseñas}}",
+  "@reviewsCount": {
+    "description": "Cantidad de reseñas de un vendedor",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "12"
+      }
+    }
+  },
+  "noReviewsTitle": "Aún no hay reseñas",
+  "@noReviewsTitle": {
+    "description": "Estado vacío de la lista de reseñas"
+  },
+  "noReviewsSubtitle": "Sé la primera persona en calificar a este vendedor.",
+  "@noReviewsSubtitle": {
+    "description": "Subtítulo del estado vacío de reseñas"
+  },
+  "reportFraud": "Reportar fraude",
+  "@reportFraud": {
+    "description": "Acción para reportar un fraude de un vendedor"
+  },
+  "retry": "Reintentar",
+  "@retry": {
+    "description": "Botón para reintentar tras un error"
+  },
+  "reportsCount": "{count, plural, =1{1 reporte} other{{count} reportes}}",
+  "@reportsCount": {
+    "description": "Cantidad de reportes de precio que respaldan el índice",
+    "placeholders": {
+      "count": {
+        "type": "int",
+        "example": "23"
+      }
+    }
+  }
+}
