@@ -19,6 +19,7 @@ import '../../features/reputation/presentation/screens/rating_screen.dart';
 import '../../features/vendor/presentation/screens/edit_product_screen.dart';
 import '../../features/vendor/presentation/screens/my_catalog_screen.dart';
 import '../../features/vendor/presentation/screens/publish_product_screen.dart';
+import '../../features/vendor/presentation/screens/vendor_setup_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_home_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_stats_screen.dart';
 import '../../shared/domain/entities/product_entity.dart';
@@ -185,6 +186,11 @@ GoRouter buildRouter({
             path: RouteNames.vendorHomePath,
             name: RouteNames.vendorHome,
             builder: (context, state) => const VendorHomeScreen(),
+          ),
+          GoRoute(
+            path: RouteNames.vendorSetupPath,
+            name: RouteNames.vendorSetup,
+            builder: (context, state) => const VendorSetupScreen(),
           ),
           GoRoute(
             path: RouteNames.vendorPublishPath,

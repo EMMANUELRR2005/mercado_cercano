@@ -7,7 +7,6 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/domain/entities/price_entities.dart';
-import '../../../../shared/domain/entities/user_entity.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../bloc/price_bloc.dart';
 import '../providers/price_provider.dart';
@@ -30,7 +29,7 @@ const _commonProducts = [
   'Limón',
 ];
 
-/// Alertas de precio — función Premium (Plan Pro). Cuerpo del shell
+/// Alertas de precio (acceso libre para compradores). Cuerpo del shell
 /// `/buyer/alerts`.
 class PriceAlertsScreen extends ConsumerStatefulWidget {
   const PriceAlertsScreen({super.key});
@@ -42,10 +41,6 @@ class PriceAlertsScreen extends ConsumerStatefulWidget {
 class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   late final PriceBloc _bloc;
 
-  // En demo el usuario arranca como free; "Mejorar a Pro" desbloquea
-  // localmente. El Agente 7 / backend conectará la suscripción real.
-  UserSubscription _subscription = UserSubscription.free;
-
   @override
   void initState() {
     super.initState();
@@ -56,16 +51,6 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   void dispose() {
     _bloc.close();
     super.dispose();
-  }
-
-  void _upgrade() {
-    setState(() => _subscription = UserSubscription.pro);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Plan Pro activado (demo)'),
-        backgroundColor: AppColors.successGreen,
-      ),
-    );
   }
 
   Future<void> _openCreateSheet() async {
@@ -89,50 +74,43 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final isPro = _subscription != UserSubscription.free;
     return Scaffold(
       appBar: AppBar(title: const Text('Alertas de precio')),
-      floatingActionButton: isPro
-          ? FloatingActionButton(
-              backgroundColor: AppColors.primaryGreen,
-              foregroundColor: Colors.white,
-              onPressed: _openCreateSheet,
-              child: const Icon(Icons.add_alert),
-            )
-          : null,
-      body: PremiumFeatureGate(
-        featureName: 'Alertas de precio',
-        subscription: _subscription,
-        onUpgrade: _upgrade,
-        child: Column(
-          children: [
-            const OfflineBanner(),
-            Expanded(
-              child: BlocConsumer<PriceBloc, PriceState>(
-                bloc: _bloc,
-                listener: (context, state) {
-                  if (state is PriceError) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text(state.message),
-                        backgroundColor: AppColors.errorRed,
-                      ),
-                    );
-                  }
-                },
-                builder: (context, state) {
-                  return switch (state) {
-                    PriceLoading() || PriceInitial() => const Center(
-                        child: CircularProgressIndicator(
-                          color: AppColors.primaryGreen,
-                        ),
-                      ),
-                    PriceError(:final message) => ErrorStateWidget(
-                        message: message,
-                        onRetry: () =>
-                            _bloc.add(const PriceAlertsRequested()),
-                      ),
-                    PriceAlertsLoaded(:final alerts) => alerts.isEmpty
+      floatingActionButton: FloatingActionButton(
+        backgroundColor: AppColors.primaryGreen,
+        foregroundColor: Colors.white,
+        onPressed: _openCreateSheet,
+        child: const Icon(Icons.add_alert),
+      ),
+      body: Column(
+        children: [
+          const OfflineBanner(),
+          Expanded(
+            child: BlocConsumer<PriceBloc, PriceState>(
+              bloc: _bloc,
+              listener: (context, state) {
+                if (state is PriceError) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(state.message),
+                      backgroundColor: AppColors.errorRed,
+                    ),
+                  );
+                }
+              },
+              builder: (context, state) {
+                return switch (state) {
+                  PriceLoading() || PriceInitial() => const Center(
+                    child: CircularProgressIndicator(
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                  PriceError(:final message) => ErrorStateWidget(
+                    message: message,
+                    onRetry: () => _bloc.add(const PriceAlertsRequested()),
+                  ),
+                  PriceAlertsLoaded(:final alerts) =>
+                    alerts.isEmpty
                         ? EmptyStateWidget(
                             icon: Icons.notifications_none,
                             title: 'Sin alertas todavía',
@@ -147,19 +125,18 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
                             itemCount: alerts.length,
                             itemBuilder: (context, i) => _AlertTile(
                               alert: alerts[i],
-                              onToggle: () => _bloc
-                                  .add(PriceAlertToggled(alerts[i].id)),
-                              onDelete: () => _bloc
-                                  .add(PriceAlertDeleted(alerts[i].id)),
+                              onToggle: () =>
+                                  _bloc.add(PriceAlertToggled(alerts[i].id)),
+                              onDelete: () =>
+                                  _bloc.add(PriceAlertDeleted(alerts[i].id)),
                             ),
                           ),
-                    _ => const SizedBox.shrink(),
-                  };
-                },
-              ),
+                  _ => const SizedBox.shrink(),
+                };
+              },
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -183,9 +160,9 @@ class _AlertTile extends StatelessWidget {
       direction: DismissDirection.endToStart,
       onDismissed: (_) {
         onDelete();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Alerta eliminada')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('Alerta eliminada')));
       },
       background: Container(
         alignment: Alignment.centerRight,
@@ -204,9 +181,7 @@ class _AlertTile extends StatelessWidget {
             alert.isActive
                 ? Icons.notifications_active
                 : Icons.notifications_off,
-            color: alert.isActive
-                ? AppColors.accentAmber
-                : AppColors.textHint,
+            color: alert.isActive ? AppColors.accentAmber : AppColors.textHint,
           ),
           title: Text(alert.productName, style: AppTextStyles.titleSmall),
           subtitle: Text(
@@ -268,15 +243,16 @@ class _CreateAlertSheetState extends State<_CreateAlertSheet> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Crear alerta de precio',
-                style: AppTextStyles.titleLarge),
+            const Text(
+              'Crear alerta de precio',
+              style: AppTextStyles.titleLarge,
+            ),
             const SizedBox(height: 16),
             Autocomplete<String>(
               optionsBuilder: (value) {
                 if (value.text.isEmpty) return _commonProducts;
                 return _commonProducts.where(
-                  (p) =>
-                      p.toLowerCase().contains(value.text.toLowerCase()),
+                  (p) => p.toLowerCase().contains(value.text.toLowerCase()),
                 );
               },
               onSelected: (v) => _nameController.text = v,
@@ -287,8 +263,7 @@ class _CreateAlertSheetState extends State<_CreateAlertSheet> {
                 return TextFormField(
                   controller: controller,
                   focusNode: focusNode,
-                  decoration:
-                      const InputDecoration(labelText: 'Producto'),
+                  decoration: const InputDecoration(labelText: 'Producto'),
                   validator: (v) =>
                       Validators.validateRequired(v, 'el producto'),
                 );
@@ -297,8 +272,9 @@ class _CreateAlertSheetState extends State<_CreateAlertSheet> {
             const SizedBox(height: 12),
             TextFormField(
               controller: _priceController,
-              keyboardType:
-                  const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
               inputFormatters: [PriceInputFormatter()],
               decoration: const InputDecoration(
                 labelText: 'Precio objetivo',

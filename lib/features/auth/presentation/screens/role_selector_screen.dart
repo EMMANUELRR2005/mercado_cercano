@@ -46,9 +46,11 @@ class _RoleSelectorScreenState extends ConsumerState<RoleSelectorScreen> {
             listener: (context, state) {
               switch (state) {
                 case Authenticated(:final user):
+                  // Vendedor nuevo: primero configura su negocio (foto,
+                  // nombre de la tienda y ubicación).
                   context.goNamed(
                     user.role == UserRole.vendor
-                        ? RouteNames.vendorHome
+                        ? RouteNames.vendorSetup
                         : RouteNames.buyerHome,
                   );
                 case AuthError(:final message):

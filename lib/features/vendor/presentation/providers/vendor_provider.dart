@@ -4,6 +4,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../data/datasources/vendor_firestore_datasource.dart';
 import '../../data/datasources/vendor_mock_datasource.dart';
+import '../../data/datasources/vendor_profile_datasource.dart';
 import '../../data/datasources/vendor_remote_datasource.dart';
 import '../../data/repositories/vendor_repository_impl.dart';
 import '../../domain/repositories/vendor_repository.dart';
@@ -36,6 +37,20 @@ final vendorRemoteDatasourceProvider = Provider<VendorRemoteDatasource>((ref) {
     );
   }
   return VendorRemoteDatasourceImpl(client: ref.watch(dioClientProvider));
+});
+
+/// Perfil público del negocio (`vendors/{uid}`): mock en demo,
+/// Firestore + Storage en modo real. Sin autoDispose: en demo el perfil
+/// vive en memoria durante toda la sesión.
+final vendorProfileDatasourceProvider =
+    Provider<VendorProfileDatasource>((ref) {
+  if (AppConstants.useMockData) {
+    return MockVendorProfileDatasource();
+  }
+  return FirestoreVendorProfileDatasource(
+    ref.watch(firestoreServiceProvider),
+    ref.watch(secureStorageProvider),
+  );
 });
 
 /// Repositorio del panel del vendedor.

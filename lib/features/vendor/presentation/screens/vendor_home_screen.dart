@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -9,6 +11,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/domain/entities/product_entity.dart';
 import '../../../../shared/widgets/widgets.dart';
+import '../../domain/entities/vendor_profile.dart';
 import '../bloc/vendor_bloc.dart';
 import '../providers/vendor_provider.dart';
 
@@ -25,6 +28,9 @@ class VendorHomeScreen extends ConsumerStatefulWidget {
 }
 
 class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
+  /// Perfil del negocio para el header (foto, nombre, zona).
+  VendorProfile? _profile;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +43,32 @@ class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
     if (statsBloc.state is VendorStatsInitial) {
       statsBloc.add(const StatsRequested());
     }
+    _loadProfile();
+  }
+
+  Future<void> _loadProfile() async {
+    try {
+      final profile =
+          await ref.read(vendorProfileDatasourceProvider).getMyProfile();
+      if (mounted) setState(() => _profile = profile);
+    } catch (_) {
+      // Header con valores por defecto si el perfil no carga.
+    }
+  }
+
+  /// Avatar del negocio: URL de Storage o ruta local (modo demo).
+  ImageProvider? _photoProvider() {
+    final url = _profile?.photoUrl;
+    if (url == null || url.isEmpty) return null;
+    return url.startsWith('http')
+        ? CachedNetworkImageProvider(url)
+        : FileImage(File(url));
+  }
+
+  Future<void> _editProfile() async {
+    await context.pushNamed(RouteNames.vendorSetup);
+    // Al volver de editar, refrescar el header.
+    _loadProfile();
   }
 
   /// Productos disponibles que vencen en menos de 2 horas.
@@ -56,8 +88,54 @@ class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Mi negocio'),
+        toolbarHeight: 68,
+        // Header del negocio: foto (50 px), nombre en bold y zona.
+        title: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: Colors.white.withValues(alpha: 0.25),
+              foregroundImage: _photoProvider(),
+              child: const Icon(Icons.storefront,
+                  size: 24, color: Colors.white),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    _profile?.businessName.isNotEmpty ?? false
+                        ? _profile!.businessName
+                        : 'Mi negocio',
+                    style: AppTextStyles.titleMedium.copyWith(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if ((_profile?.neighborhood ?? '').isNotEmpty)
+                    Text(
+                      _profile!.neighborhood!,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: Colors.white.withValues(alpha: 0.85),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
         actions: [
+          IconButton(
+            tooltip: 'Editar mi negocio',
+            icon: const Icon(Icons.edit_outlined),
+            onPressed: _editProfile,
+          ),
           IconButton(
             tooltip: 'Configuración',
             icon: const Icon(Icons.settings_outlined),

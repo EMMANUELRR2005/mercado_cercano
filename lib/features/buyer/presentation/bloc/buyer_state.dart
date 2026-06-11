@@ -15,15 +15,22 @@ class BuyerLoading extends BuyerState {
   const BuyerLoading();
 }
 
-/// Home cargada: índice del día + vendedores cercanos.
+/// Home cargada: índice del día + productos y vendedores cercanos.
 class BuyerHomeLoaded extends BuyerState {
-  const BuyerHomeLoaded({required this.priceIndex, required this.vendors});
+  const BuyerHomeLoaded({
+    required this.priceIndex,
+    required this.vendors,
+    this.products = const [],
+  });
 
-  /// Precios promedio HOY en la zona (para el carrusel horizontal).
+  /// Precios promedio HOY en la zona (carrusel "Precios de hoy").
   final List<PriceIndex> priceIndex;
 
   /// Vendedores cercanos ordenados por distancia.
   final List<NearbyVendor> vendors;
+
+  /// Productos cercanos ordenados por distancia (grid "Cerca de ti").
+  final List<SearchResult> products;
 }
 
 /// Resultados de búsqueda cargados.

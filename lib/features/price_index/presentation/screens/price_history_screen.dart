@@ -8,7 +8,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
 import '../../../../shared/domain/entities/price_entities.dart';
-import '../../../../shared/domain/entities/user_entity.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../bloc/price_bloc.dart';
 import '../providers/price_provider.dart';
@@ -25,7 +24,7 @@ enum _Range {
   final String label;
 }
 
-/// Historial de precios de un producto — función Premium (Plan Pro).
+/// Historial de precios de un producto (acceso libre para compradores).
 class PriceHistoryScreen extends ConsumerStatefulWidget {
   const PriceHistoryScreen({super.key, required this.productName});
 
@@ -40,10 +39,6 @@ class _PriceHistoryScreenState extends ConsumerState<PriceHistoryScreen> {
   late final PriceBloc _bloc;
   _Range _range = _Range.month;
 
-  // En demo el usuario arranca como free; "Mejorar a Pro" desbloquea
-  // localmente. El Agente 7 / backend conectará la suscripción real.
-  UserSubscription _subscription = UserSubscription.free;
-
   @override
   void initState() {
     super.initState();
@@ -57,47 +52,32 @@ class _PriceHistoryScreenState extends ConsumerState<PriceHistoryScreen> {
     super.dispose();
   }
 
-  void _upgrade() {
-    setState(() => _subscription = UserSubscription.pro);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Plan Pro activado (demo)'),
-        backgroundColor: AppColors.successGreen,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: Text('Historial · ${widget.productName}')),
-      body: PremiumFeatureGate(
-        featureName: 'Historial de precios',
-        subscription: _subscription,
-        onUpgrade: _upgrade,
-        child: BlocBuilder<PriceBloc, PriceState>(
-          bloc: _bloc,
-          builder: (context, state) {
-            return switch (state) {
-              PriceLoading() || PriceInitial() => const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primaryGreen,
-                  ),
+      body: BlocBuilder<PriceBloc, PriceState>(
+        bloc: _bloc,
+        builder: (context, state) {
+          return switch (state) {
+            PriceLoading() || PriceInitial() => const Center(
+                child: CircularProgressIndicator(
+                  color: AppColors.primaryGreen,
                 ),
-              PriceError(:final message) => ErrorStateWidget(
-                  message: message,
-                  onRetry: () =>
-                      _bloc.add(PriceHistoryRequested(widget.productName)),
-                ),
-              PriceHistoryLoaded(:final history) => _HistoryContent(
-                  history: history,
-                  range: _range,
-                  onRangeChanged: (r) => setState(() => _range = r),
-                ),
-              _ => const SizedBox.shrink(),
-            };
-          },
-        ),
+              ),
+            PriceError(:final message) => ErrorStateWidget(
+                message: message,
+                onRetry: () =>
+                    _bloc.add(PriceHistoryRequested(widget.productName)),
+              ),
+            PriceHistoryLoaded(:final history) => _HistoryContent(
+                history: history,
+                range: _range,
+                onRangeChanged: (r) => setState(() => _range = r),
+              ),
+            _ => const SizedBox.shrink(),
+          };
+        },
       ),
     );
   }

@@ -51,6 +51,9 @@ class RouteNames {
   static const String vendorHome = 'vendorHome';
   static const String vendorHomePath = '/vendor/home';
 
+  static const String vendorSetup = 'vendorSetup';
+  static const String vendorSetupPath = '/vendor/setup';
+
   static const String vendorPublish = 'vendorPublish';
   static const String vendorPublishPath = '/vendor/publish';
 

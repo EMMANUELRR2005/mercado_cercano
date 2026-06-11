@@ -64,10 +64,15 @@ class BuyerBloc extends Bloc<BuyerEvent, BuyerState> {
     final vendors = byVendor.values.toList()
       ..sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
 
+    // Productos cercanos ordenados por distancia (grid "Cerca de ti").
+    final products = [...?searchResults]
+      ..sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
+
     emit(
       BuyerHomeLoaded(
         priceIndex: indices ?? const <PriceIndex>[],
         vendors: vendors,
+        products: products,
       ),
     );
   }
