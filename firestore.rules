@@ -1,0 +1,65 @@
+rules_version = '2';
+
+// Reglas de seguridad de MercadoCercano (mercado-cercano-28190).
+//
+// Convención: el id del documento en `vendors` es el uid del usuario
+// vendedor, y `products.vendorId` referencia ese uid. Así "solo el dueño
+// escribe" se valida comparando contra request.auth.uid.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // users: solo el propio usuario lee y escribe su documento.
+    match /users/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // vendors: cualquier autenticado lee; solo el dueño escribe.
+    match /vendors/{vendorId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.auth.uid == vendorId
+        && request.resource.data.userId == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+    }
+
+    // products: cualquier autenticado lee; solo el vendedor dueño escribe.
+    match /products/{productId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.vendorId == request.auth.uid;
+      allow update, delete: if signedIn()
+        && resource.data.vendorId == request.auth.uid;
+    }
+
+    // price_reports: cualquier autenticado lee y crea; nadie borra ni edita
+    // (el índice colaborativo es inmutable).
+    match /price_reports/{reportId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.reportedBy == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // ratings: cualquier autenticado lee; compradores autenticados crean
+    // a su propio nombre; no se editan ni borran.
+    match /ratings/{ratingId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.buyerId == request.auth.uid;
+      allow update, delete: if false;
+    }
+
+    // price_alerts: solo el propio usuario gestiona sus alertas.
+    match /price_alerts/{alertId} {
+      allow read, update, delete: if signedIn()
+        && resource.data.userId == request.auth.uid;
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}

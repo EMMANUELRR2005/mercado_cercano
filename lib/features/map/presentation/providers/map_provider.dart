@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
+import '../../data/datasources/map_firestore_datasource.dart';
 import '../../data/datasources/map_mock_datasource.dart';
 import '../../data/datasources/map_remote_datasource.dart';
 import '../../data/datasources/map_websocket_datasource.dart';
@@ -15,19 +16,38 @@ import '../bloc/map_bloc.dart';
 
 /// DI manual con Riverpod 3 (`Provider<T>`, sin codegen) para el mapa.
 
-/// Datasource REST: mock o real según `AppConstants.useMockData`.
+/// Firestore cumple ambos contratos (carga + tiempo real con snapshots);
+/// una sola instancia compartida entre los dos providers.
+final _mapFirestoreDatasourceProvider =
+    Provider<MapFirestoreDatasource>((ref) {
+  final datasource =
+      MapFirestoreDatasource(ref.watch(firestoreServiceProvider));
+  ref.onDispose(datasource.dispose);
+  return datasource;
+});
+
+/// Datasource REST según flags: mock (demo) → Firestore → API real.
 final mapRemoteDatasourceProvider = Provider<MapRemoteDatasource>((ref) {
   if (AppConstants.useMockData) {
     return MockMapRemoteDatasource();
   }
+  if (AppConstants.useFirestore) {
+    return ref.watch(_mapFirestoreDatasourceProvider);
+  }
   return MapRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });
 
-/// Datasource WebSocket (tiempo real): mock o real según el flag.
+/// Datasource de tiempo real según flags: mock → Firestore → WebSocket.
 final mapWebsocketDatasourceProvider = Provider<MapWebsocketDatasource>((ref) {
-  final datasource = AppConstants.useMockData
-      ? MockMapWebsocketDatasource()
-      : MapWebsocketDatasourceImpl();
+  if (AppConstants.useMockData) {
+    final datasource = MockMapWebsocketDatasource();
+    ref.onDispose(datasource.dispose);
+    return datasource;
+  }
+  if (AppConstants.useFirestore) {
+    return ref.watch(_mapFirestoreDatasourceProvider);
+  }
+  final datasource = MapWebsocketDatasourceImpl();
   ref.onDispose(datasource.dispose);
   return datasource;
 });

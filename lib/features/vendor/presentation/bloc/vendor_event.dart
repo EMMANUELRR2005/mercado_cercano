@@ -14,6 +14,12 @@ final class MyProductsRequested extends VendorProductsEvent {
   const MyProductsRequested();
 }
 
+/// Suscribirse al catálogo en TIEMPO REAL (snapshots de Firestore o
+/// re-emisiones del mock). Idempotente: una sola suscripción por bloc.
+final class MyProductsWatchStarted extends VendorProductsEvent {
+  const MyProductsWatchStarted();
+}
+
 /// Publicar un producto nuevo a partir del borrador del flujo de 3 toques.
 final class ProductCreated extends VendorProductsEvent {
   const ProductCreated(this.draft);

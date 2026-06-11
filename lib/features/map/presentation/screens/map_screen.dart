@@ -33,6 +33,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   /// Pines custom por categoría (se cargan async y se cachean).
   final Map<ProductCategory, BitmapDescriptor> _pinIcons = {};
 
+  /// La cámara se centra automáticamente SOLO en el primer fix real;
+  /// después el usuario navega libre y recentra con el FAB.
+  bool _centeredOnUser = false;
+
+  /// El diálogo de permiso denegado se muestra una sola vez por sesión.
+  bool _deniedDialogShown = false;
+
   static const CameraPosition _initialCamera = CameraPosition(
     target: LatLng(
       AppConstants.guatemalaCityLat,
@@ -59,6 +66,48 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       final pin = await VendorPinMarker.buildPin(category);
       if (!mounted) return;
       setState(() => _pinIcons[category] = pin);
+    }
+  }
+
+  /// Recentra la cámara en la ubicación actual del comprador.
+  void _centerOnUser(MapState state) {
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(state.userLocation, 15),
+    );
+  }
+
+  /// Diálogo cuando el permiso de ubicación fue denegado o el GPS está
+  /// apagado: explica el porqué y ofrece abrir la configuración o seguir
+  /// con Ciudad de Guatemala como ubicación por defecto.
+  Future<void> _showLocationDeniedDialog() async {
+    if (_deniedDialogShown || !mounted) return;
+    _deniedDialogShown = true;
+    final openSettings = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Activa tu ubicación'),
+        content: const Text(
+          'MercadoCercano usa tu ubicación para mostrarte los vendedores '
+          'más cercanos a ti y calcular distancias reales. Tu ubicación '
+          'nunca se almacena.\n\nSin permiso, el mapa usará Ciudad de '
+          'Guatemala como punto de referencia.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Usar ubicación por defecto'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Abrir configuración'),
+          ),
+        ],
+      ),
+    );
+    if (openSettings == true) {
+      // Abre los ajustes correctos (de la app o del sistema) según el
+      // motivo de la denegación.
+      await ref.read(getUserLocationUsecaseProvider).openSettings();
     }
   }
 
@@ -128,7 +177,8 @@ class _MapScreenState extends ConsumerState<MapScreen> {
       child: BlocConsumer<MapBloc, MapState>(
         listenWhen: (previous, current) =>
             previous.errorMessage != current.errorMessage ||
-            previous.userLocation != current.userLocation,
+            previous.userLocation != current.userLocation ||
+            previous.locationDenied != current.locationDenied,
         listener: (context, state) {
           // Errores de recarga (con datos previos en pantalla): snackbar.
           if (state.errorMessage != null && state.status == MapStatus.ready) {
@@ -139,24 +189,47 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               ),
             );
           }
-          // Al obtener la ubicación real, centrar la cámara.
-          _mapController?.animateCamera(
-            CameraUpdate.newLatLng(state.userLocation),
-          );
+          // Permiso denegado: explicar y ofrecer abrir configuración.
+          if (state.locationDenied) {
+            _showLocationDeniedDialog();
+          }
+          // Primer fix real: centrar la cámara en el comprador (una vez;
+          // después manda el usuario y el FAB "Mi ubicación").
+          if (!state.locationDenied &&
+              !_centeredOnUser &&
+              state.status != MapStatus.initial) {
+            _centeredOnUser = true;
+            _centerOnUser(state);
+          }
         },
         builder: (context, state) {
           final isLoading = state.status == MapStatus.loading ||
               state.status == MapStatus.initial;
 
           return Scaffold(
+            // FAB "Mi ubicación": recentra la cámara en el comprador si
+            // se alejó navegando el mapa. Oculto sin permiso (fallback).
+            floatingActionButton: state.locationDenied
+                ? null
+                : Padding(
+                    padding: const EdgeInsets.only(bottom: 64),
+                    child: FloatingActionButton.small(
+                      heroTag: 'map_my_location_fab',
+                      backgroundColor: AppColors.surfaceWhite,
+                      foregroundColor: AppColors.primaryGreen,
+                      tooltip: 'Mi ubicación',
+                      onPressed: () => _centerOnUser(state),
+                      child: const Icon(Icons.my_location),
+                    ),
+                  ),
             body: Stack(
               children: [
                 GoogleMap(
                   initialCameraPosition: _initialCamera,
                   // Con permiso denegado se ocultan el punto azul y el
-                  // botón nativo de "mi ubicación".
+                  // botón nativo de "mi ubicación" (usamos nuestro FAB).
                   myLocationEnabled: !state.locationDenied,
-                  myLocationButtonEnabled: !state.locationDenied,
+                  myLocationButtonEnabled: false,
                   zoomControlsEnabled: false,
                   markers: _buildMarkers(context, state),
                   circles: _buildRadiusCircle(state),

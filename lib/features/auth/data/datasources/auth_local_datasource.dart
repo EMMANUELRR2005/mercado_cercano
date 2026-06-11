@@ -32,4 +32,22 @@ class AuthLocalDatasource {
 
   /// Teléfono guardado, o `null` si no hay sesión previa.
   Future<String?> getPhone() => _storage.read(key: _phoneKey);
+
+  static const String _hasBeenVendorKey = 'has_been_vendor';
+  static const String _hasBeenBuyerKey = 'has_been_buyer';
+
+  /// `true` si el usuario ya estuvo en modo vendedor alguna vez
+  /// (para no repetir el onboarding de vendedor).
+  Future<bool> hasBeenVendor() async =>
+      await _storage.read(key: _hasBeenVendorKey) == 'true';
+
+  Future<void> markHasBeenVendor() =>
+      _storage.write(key: _hasBeenVendorKey, value: 'true');
+
+  /// `true` si el usuario ya estuvo en modo comprador alguna vez.
+  Future<bool> hasBeenBuyer() async =>
+      await _storage.read(key: _hasBeenBuyerKey) == 'true';
+
+  Future<void> markHasBeenBuyer() =>
+      _storage.write(key: _hasBeenBuyerKey, value: 'true');
 }

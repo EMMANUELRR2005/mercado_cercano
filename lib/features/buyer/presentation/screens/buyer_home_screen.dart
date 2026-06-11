@@ -82,6 +82,14 @@ class _BuyerHomeScreenState extends ConsumerState<BuyerHomeScreen> {
               ),
             ),
           ),
+          actions: [
+            IconButton(
+              tooltip: 'Configuración',
+              color: Colors.white,
+              icon: const Icon(Icons.settings_outlined),
+              onPressed: () => context.pushNamed(RouteNames.settings),
+            ),
+          ],
         ),
         floatingActionButton: FloatingActionButton.extended(
           heroTag: 'buyer_home_map_fab',

@@ -64,6 +64,7 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     on<VendorSelected>(_onVendorSelected);
     on<VendorDeselected>(_onVendorDeselected);
     on<RealtimeEventReceived>(_onRealtimeEventReceived);
+    on<UserLocationChanged>(_onUserLocationChanged);
   }
 
   final GetVendorsNearbyUsecase _getVendorsNearby;
@@ -71,6 +72,7 @@ class MapBloc extends Bloc<MapEvent, MapState> {
   final GetUserLocationUsecase _getUserLocation;
 
   StreamSubscription<VendorRealtimeEvent>? _realtimeSub;
+  StreamSubscription<LatLng>? _locationSub;
 
   // -----------------------------------------------------------------
   // Handlers
@@ -100,6 +102,53 @@ class MapBloc extends Bloc<MapEvent, MapState> {
       // funcionando con las cargas por radio.
       onError: (_) {},
     );
+
+    // Ubicación en VIVO: el pin del comprador, el círculo de radio y
+    // las distancias se actualizan mientras se mueve. Solo memoria.
+    if (!location.denied) {
+      await _locationSub?.cancel();
+      _locationSub = _getUserLocation.watch().listen(
+            (position) => add(UserLocationChanged(position)),
+            onError: (_) {},
+          );
+    }
+  }
+
+  /// El comprador se movió: recalcular distancias y re-ordenar por
+  /// cercanía SIN recargar del backend.
+  void _onUserLocationChanged(
+    UserLocationChanged event,
+    Emitter<MapState> emit,
+  ) {
+    emit(
+      state.copyWith(
+        userLocation: event.location,
+        vendors: _withDistancesFrom(event.location, state.vendors),
+      ),
+    );
+  }
+
+  /// Distancias desde la ubicación REAL del comprador (no desde el
+  /// centro de la cámara) + orden por cercanía.
+  List<VendorLocationEntity> _withDistancesFrom(
+    LatLng origin,
+    List<VendorLocationEntity> vendors,
+  ) {
+    final updated = [
+      for (final v in vendors)
+        v.copyWith(
+          distanceMeters: Geolocator.distanceBetween(
+            origin.latitude,
+            origin.longitude,
+            v.latitude,
+            v.longitude,
+          ),
+        ),
+    ]..sort(
+        (a, b) => (a.distanceMeters ?? double.infinity)
+            .compareTo(b.distanceMeters ?? double.infinity),
+      );
+    return updated;
   }
 
   Future<void> _onMapMoved(MapMoved event, Emitter<MapState> emit) async {
@@ -229,7 +278,9 @@ class MapBloc extends Bloc<MapEvent, MapState> {
       emit(
         state.copyWith(
           status: MapStatus.ready,
-          vendors: vendors,
+          // Distancias y orden siempre relativos al COMPRADOR, aunque la
+          // recarga haya sido por mover la cámara.
+          vendors: _withDistancesFrom(state.userLocation, vendors),
           errorMessage: null,
         ),
       );
@@ -255,8 +306,9 @@ class MapBloc extends Bloc<MapEvent, MapState> {
 
   @override
   Future<void> close() async {
-    // Cancela la suscripción al WebSocket al cerrar el bloc.
+    // Cancela las suscripciones (WebSocket y ubicación) al cerrar.
     await _realtimeSub?.cancel();
+    await _locationSub?.cancel();
     return super.close();
   }
 }

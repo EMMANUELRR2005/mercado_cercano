@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
+import '../../data/datasources/vendor_firestore_datasource.dart';
 import '../../data/datasources/vendor_mock_datasource.dart';
 import '../../data/datasources/vendor_remote_datasource.dart';
 import '../../data/repositories/vendor_repository_impl.dart';
@@ -12,6 +13,7 @@ import '../../domain/usecases/get_vendor_stats_usecase.dart';
 import '../../domain/usecases/mark_sold_out_usecase.dart';
 import '../../domain/usecases/renew_all_products_usecase.dart';
 import '../../domain/usecases/update_product_usecase.dart';
+import '../../domain/usecases/watch_my_products_usecase.dart';
 import '../bloc/vendor_bloc.dart';
 
 /// DI del feature del vendedor (Riverpod 3, `Provider<T>` manual).
@@ -22,10 +24,16 @@ import '../bloc/vendor_bloc.dart';
 /// - El datasource NO es autoDispose: en modo mock mantiene el catálogo
 ///   en memoria durante toda la sesión (la demo es interactiva).
 
-/// Datasource del vendedor: mock o API real según `AppConstants.useMockData`.
+/// Datasource del vendedor según flags: mock (demo) → Firestore → API REST.
 final vendorRemoteDatasourceProvider = Provider<VendorRemoteDatasource>((ref) {
   if (AppConstants.useMockData) {
     return VendorMockDatasource();
+  }
+  if (AppConstants.useFirestore) {
+    return VendorFirestoreDatasource(
+      ref.watch(firestoreServiceProvider),
+      ref.watch(secureStorageProvider),
+    );
   }
   return VendorRemoteDatasourceImpl(client: ref.watch(dioClientProvider));
 });
@@ -41,6 +49,11 @@ final vendorRepositoryProvider = Provider<VendorRepository>((ref) {
 
 final getMyProductsUsecaseProvider = Provider<GetMyProductsUsecase>((ref) {
   return GetMyProductsUsecase(ref.watch(vendorRepositoryProvider));
+});
+
+final watchMyProductsUsecaseProvider =
+    Provider<WatchMyProductsUsecase>((ref) {
+  return WatchMyProductsUsecase(ref.watch(vendorRepositoryProvider));
 });
 
 final createProductUsecaseProvider = Provider<CreateProductUsecase>((ref) {
@@ -71,6 +84,7 @@ final vendorProductsBlocProvider =
     Provider.autoDispose<VendorProductsBloc>((ref) {
   final bloc = VendorProductsBloc(
     getMyProducts: ref.watch(getMyProductsUsecaseProvider),
+    watchMyProducts: ref.watch(watchMyProductsUsecaseProvider),
     createProduct: ref.watch(createProductUsecaseProvider),
     updateProduct: ref.watch(updateProductUsecaseProvider),
     markSoldOut: ref.watch(markSoldOutUsecaseProvider),

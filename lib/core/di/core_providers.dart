@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../firebase/firestore_service.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
 import '../storage/secure_storage.dart';
@@ -25,4 +26,10 @@ final dioClientProvider = Provider<DioClient>((ref) {
 /// Estado de conectividad.
 final networkInfoProvider = Provider<NetworkInfo>((ref) {
   return NetworkInfoImpl();
+});
+
+/// Acceso genérico a Cloud Firestore (los datasources Firestore de cada
+/// feature lo consumen).
+final firestoreServiceProvider = Provider<FirestoreService>((ref) {
+  return FirestoreService.instance;
 });

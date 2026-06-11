@@ -159,7 +159,14 @@ class AuthFirebaseDatasource implements AuthRemoteDatasource {
       throw const AuthException('La sesión expiró. Inicia sesión de nuevo.');
     }
     await _users.doc(firebaseUser.uid).set(
-      {'role': role.name},
+      {
+        'role': role.name,
+        // Trazabilidad del cambio de rol + flags para no repetir el
+        // onboarding de cada modo.
+        'lastRoleChange': FieldValue.serverTimestamp(),
+        if (role == UserRole.vendor) 'hasBeenVendor': true,
+        if (role == UserRole.buyer) 'hasBeenBuyer': true,
+      },
       SetOptions(merge: true),
     );
     final data = (await _users.doc(firebaseUser.uid).get()).data();

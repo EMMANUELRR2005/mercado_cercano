@@ -11,6 +11,10 @@ abstract class VendorRepository {
   /// Productos publicados por el vendedor autenticado.
   Future<List<ProductEntity>> getMyProducts();
 
+  /// Catálogo en TIEMPO REAL (Firestore re-emite con cada cambio;
+  /// el mock re-emite tras cada mutación).
+  Stream<List<ProductEntity>> watchMyProducts();
+
   /// Publica un producto nuevo a partir de un borrador.
   Future<ProductEntity> createProduct(ProductDraft draft);
 

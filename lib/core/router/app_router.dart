@@ -73,6 +73,16 @@ GoRouter buildRouter({
             : RouteNames.buyerHomePath;
       }
 
+      // Cada rol vive en su área (las rutas /shared/* quedan fuera del
+      // guard). Si el rol cambia en caliente, el refreshListenable
+      // reevalúa esto y reubica al usuario.
+      if (role == 'buyer' && location.startsWith('/vendor')) {
+        return RouteNames.buyerHomePath;
+      }
+      if (role == 'vendor' && location.startsWith('/buyer')) {
+        return RouteNames.vendorHomePath;
+      }
+
       return null;
     },
     routes: [

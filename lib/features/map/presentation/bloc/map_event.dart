@@ -64,3 +64,11 @@ final class RealtimeEventReceived extends MapEvent {
 
   final VendorRealtimeEvent event;
 }
+
+/// La ubicación REAL del comprador cambió (stream de geolocator).
+/// Solo memoria: actualiza distancias, orden y el círculo de radio.
+final class UserLocationChanged extends MapEvent {
+  const UserLocationChanged(this.location);
+
+  final LatLng location;
+}

@@ -13,6 +13,7 @@ import '../../domain/usecases/get_vendor_stats_usecase.dart';
 import '../../domain/usecases/mark_sold_out_usecase.dart';
 import '../../domain/usecases/renew_all_products_usecase.dart';
 import '../../domain/usecases/update_product_usecase.dart';
+import '../../domain/usecases/watch_my_products_usecase.dart';
 
 part 'vendor_event.dart';
 part 'vendor_state.dart';
@@ -30,12 +31,14 @@ class VendorProductsBloc
     extends Bloc<VendorProductsEvent, VendorProductsState> {
   VendorProductsBloc({
     required this._getMyProducts,
+    required this._watchMyProducts,
     required this._createProduct,
     required this._updateProduct,
     required this._markSoldOut,
     required this._renewAllProducts,
   }) : super(const VendorProductsInitial()) {
     on<MyProductsRequested>(_onMyProductsRequested);
+    on<MyProductsWatchStarted>(_onMyProductsWatchStarted);
     on<ProductCreated>(_onProductCreated);
     on<ProductUpdated>(_onProductUpdated);
     on<ProductMarkedSoldOut>(_onProductMarkedSoldOut);
@@ -44,6 +47,7 @@ class VendorProductsBloc
   }
 
   final GetMyProductsUsecase _getMyProducts;
+  final WatchMyProductsUsecase _watchMyProducts;
   final CreateProductUsecase _createProduct;
   final UpdateProductUsecase _updateProduct;
   final MarkSoldOutUsecase _markSoldOut;
@@ -55,9 +59,42 @@ class VendorProductsBloc
         _ => const <ProductEntity>[],
       };
 
+  /// Evita doble suscripción al stream del catálogo (el handler de un
+  /// mismo tipo de evento procesa en serie: una segunda suscripción
+  /// quedaría encolada para siempre).
+  bool _watching = false;
+
   // -------------------------------------------------------------------------
   // Handlers
   // -------------------------------------------------------------------------
+
+  /// Catálogo en tiempo real: cada snapshot re-emite la lista.
+  Future<void> _onMyProductsWatchStarted(
+    MyProductsWatchStarted event,
+    Emitter<VendorProductsState> emit,
+  ) async {
+    if (_watching) return;
+    _watching = true;
+    if (state is! VendorProductsReady) {
+      emit(const VendorProductsLoading());
+    }
+    try {
+      await emit.forEach<List<ProductEntity>>(
+        _watchMyProducts(),
+        onData: VendorProductsLoaded.new,
+        onError: (error, _) {
+          final message = _messageOf(error);
+          final products = _currentProducts;
+          return products.isEmpty
+              ? VendorProductsError(message)
+              : VendorProductActionFailure(products, message: message);
+        },
+      );
+    } finally {
+      // El stream terminó (o el bloc se cerró): permitir re-suscribirse.
+      _watching = false;
+    }
+  }
 
   Future<void> _onMyProductsRequested(
     MyProductsRequested event,

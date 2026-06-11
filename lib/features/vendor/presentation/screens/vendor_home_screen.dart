@@ -55,7 +55,16 @@ class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
     final statsBloc = ref.watch(vendorStatsBlocProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Mi negocio')),
+      appBar: AppBar(
+        title: const Text('Mi negocio'),
+        actions: [
+          IconButton(
+            tooltip: 'Configuración',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => context.pushNamed(RouteNames.settings),
+          ),
+        ],
+      ),
       floatingActionButton: FloatingActionButton.large(
         backgroundColor: AppColors.primaryGreen,
         foregroundColor: Colors.white,

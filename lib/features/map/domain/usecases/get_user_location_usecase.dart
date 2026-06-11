@@ -20,4 +20,10 @@ class GetUserLocationUsecase {
     final position = await _service.getCurrentLocation();
     return (position: position, denied: _service.locationDenied);
   }
+
+  /// Ubicación en VIVO mientras el comprador se mueve (solo memoria).
+  Stream<LatLng> watch() => _service.watchLocation();
+
+  /// Abre los ajustes adecuados (app o sistema) tras una denegación.
+  Future<void> openSettings() => _service.openSettings();
 }

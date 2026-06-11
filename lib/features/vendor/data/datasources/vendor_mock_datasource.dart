@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../domain/entities/product_draft.dart';
@@ -23,11 +25,29 @@ class VendorMockDatasource implements VendorRemoteDatasource {
   /// Contador para generar ids únicos de productos nuevos.
   int _createdCount = 0;
 
+  /// Emisor del "tiempo real" simulado: re-emite el catálogo tras cada
+  /// mutación, igual que haría el snapshot de Firestore.
+  final StreamController<List<ProductModel>> _changes =
+      StreamController.broadcast();
+
+  void _notify() {
+    if (!_changes.isClosed) {
+      _changes.add(List<ProductModel>.unmodifiable(_products));
+    }
+  }
+
   @override
   Future<List<ProductModel>> getMyProducts() async {
     await Future<void>.delayed(_networkDelay);
     // Copia defensiva para que la UI no mute el estado interno.
     return List<ProductModel>.unmodifiable(_products);
+  }
+
+  @override
+  Stream<List<ProductModel>> watchMyProducts() async* {
+    await Future<void>.delayed(_networkDelay);
+    yield List<ProductModel>.unmodifiable(_products);
+    yield* _changes.stream;
   }
 
   @override
@@ -56,6 +76,7 @@ class VendorMockDatasource implements VendorRemoteDatasource {
 
     // Lo insertamos de primero para que se vea de inmediato en la lista.
     _products.insert(0, product);
+    _notify();
     return product;
   }
 
@@ -68,6 +89,7 @@ class VendorMockDatasource implements VendorRemoteDatasource {
       throw const ServerException('Producto no encontrado', statusCode: 404);
     }
     _products[index] = product;
+    _notify();
     return product;
   }
 
@@ -81,6 +103,7 @@ class VendorMockDatasource implements VendorRemoteDatasource {
     }
     final updated = _products[index].copyWith(isAvailable: false);
     _products[index] = updated;
+    _notify();
     return updated;
   }
 
@@ -103,6 +126,7 @@ class VendorMockDatasource implements VendorRemoteDatasource {
         ),
       );
     }
+    _notify();
     return List<ProductModel>.unmodifiable(_products);
   }
 

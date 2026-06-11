@@ -22,6 +22,13 @@ class VendorRepositoryImpl implements VendorRepository {
   }
 
   @override
+  Stream<List<ProductEntity>> watchMyProducts() {
+    return _datasource
+        .watchMyProducts()
+        .map((models) => models.map((m) => m.toEntity()).toList());
+  }
+
+  @override
   Future<ProductEntity> createProduct(ProductDraft draft) async {
     final model = await _datasource.createProduct(draft);
     return model.toEntity();

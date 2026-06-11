@@ -15,6 +15,12 @@ abstract class VendorRemoteDatasource {
   /// `GET /vendor/products`.
   Future<List<ProductModel>> getMyProducts();
 
+  /// Catálogo del vendedor en TIEMPO REAL.
+  ///
+  /// Firestore re-emite con cada cambio; el mock re-emite tras cada
+  /// mutación; la API REST (sin push) emite una sola vez.
+  Stream<List<ProductModel>> watchMyProducts();
+
   /// `POST /vendor/products`.
   Future<ProductModel> createProduct(ProductDraft draft);
 
@@ -39,6 +45,13 @@ class VendorRemoteDatasourceImpl implements VendorRemoteDatasource {
 
   /// `/vendor/products/:id` (deriva de `ApiEndpoints.vendorProducts`).
   String _productPath(String id) => '${ApiEndpoints.vendorProducts}/$id';
+
+  @override
+  Stream<List<ProductModel>> watchMyProducts() {
+    // La API REST no tiene push: una emisión única; el refresco lo hace
+    // el pull-to-refresh de la pantalla.
+    return Stream.fromFuture(getMyProducts());
+  }
 
   @override
   Future<List<ProductModel>> getMyProducts() async {

@@ -24,10 +24,11 @@ class _MyCatalogScreenState extends ConsumerState<MyCatalogScreen> {
   @override
   void initState() {
     super.initState();
-    final bloc = ref.read(vendorProductsBlocProvider);
-    if (bloc.state is VendorProductsInitial) {
-      bloc.add(const MyProductsRequested());
-    }
+    // Catálogo en TIEMPO REAL: con Firestore cada cambio re-emite la
+    // lista (el evento es idempotente, una sola suscripción por bloc).
+    ref
+        .read(vendorProductsBlocProvider)
+        .add(const MyProductsWatchStarted());
   }
 
   @override

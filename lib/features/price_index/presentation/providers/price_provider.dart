@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
+import '../../data/datasources/price_firestore_datasource.dart';
 import '../../data/datasources/price_mock_datasource.dart';
 import '../../data/datasources/price_remote_datasource.dart';
 import '../../data/repositories/price_repository_impl.dart';
@@ -22,6 +23,12 @@ import '../bloc/price_bloc.dart';
 final priceRemoteDatasourceProvider = Provider<PriceRemoteDatasource>((ref) {
   if (AppConstants.useMockData) {
     return PriceMockDatasource();
+  }
+  if (AppConstants.useFirestore) {
+    return PriceFirestoreDatasource(
+      ref.watch(firestoreServiceProvider),
+      ref.watch(secureStorageProvider),
+    );
   }
   return PriceRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });

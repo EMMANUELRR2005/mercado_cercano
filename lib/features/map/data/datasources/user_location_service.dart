@@ -3,6 +3,21 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 
 import '../../../../core/constants/app_constants.dart';
 
+/// Resultado del último intento de acceder a la ubicación. Permite a la
+/// UI decidir qué pantalla de configuración abrir.
+enum LocationAccessStatus {
+  granted,
+
+  /// Permiso denegado (se puede volver a pedir).
+  denied,
+
+  /// Denegado permanentemente: solo se arregla en Ajustes de la app.
+  deniedForever,
+
+  /// El GPS/servicio de ubicación del sistema está apagado.
+  serviceDisabled,
+}
+
 /// Servicio de ubicación del comprador.
 ///
 /// PRIVACIDAD: la ubicación del comprador nunca se persiste — solo en
@@ -22,6 +37,14 @@ abstract class UserLocationService {
   /// denegado o servicio apagado). El bloc lo expone en su estado para
   /// mostrar un chip informativo.
   bool get locationDenied;
+
+  /// Detalle del último intento (para abrir la pantalla de ajustes
+  /// correcta desde el diálogo de la UI).
+  LocationAccessStatus get lastStatus;
+
+  /// Abre los ajustes adecuados según [lastStatus]: los del sistema si
+  /// el GPS está apagado, los de la app si el permiso fue denegado.
+  Future<void> openSettings();
 }
 
 /// Implementación con geolocator. Sin persistencia de ningún tipo.
@@ -40,24 +63,47 @@ class UserLocationServiceImpl implements UserLocationService {
   );
 
   bool _locationDenied = false;
+  LocationAccessStatus _lastStatus = LocationAccessStatus.denied;
 
   @override
   bool get locationDenied => _locationDenied;
 
+  @override
+  LocationAccessStatus get lastStatus => _lastStatus;
+
+  @override
+  Future<void> openSettings() {
+    return _lastStatus == LocationAccessStatus.serviceDisabled
+        ? Geolocator.openLocationSettings()
+        : Geolocator.openAppSettings();
+  }
+
   /// Verifica servicio y permisos; pide permiso si aún no se decidió.
+  /// Registra el detalle en [_lastStatus].
   Future<bool> _hasPermission() async {
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) return false;
+      if (!serviceEnabled) {
+        _lastStatus = LocationAccessStatus.serviceDisabled;
+        return false;
+      }
 
       var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-      return permission == LocationPermission.always ||
-          permission == LocationPermission.whileInUse;
+      _lastStatus = switch (permission) {
+        LocationPermission.always ||
+        LocationPermission.whileInUse =>
+          LocationAccessStatus.granted,
+        LocationPermission.deniedForever =>
+          LocationAccessStatus.deniedForever,
+        _ => LocationAccessStatus.denied,
+      };
+      return _lastStatus == LocationAccessStatus.granted;
     } catch (_) {
       // Plataforma sin soporte de geolocalización: tratamos como denegado.
+      _lastStatus = LocationAccessStatus.denied;
       return false;
     }
   }

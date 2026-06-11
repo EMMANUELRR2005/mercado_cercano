@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../../price_index/presentation/providers/price_provider.dart';
+import '../../data/datasources/buyer_firestore_datasource.dart';
 import '../../data/datasources/buyer_mock_datasource.dart';
 import '../../data/datasources/buyer_remote_datasource.dart';
 import '../../data/repositories/buyer_repository_impl.dart';
@@ -15,13 +16,19 @@ import '../bloc/buyer_bloc.dart';
 
 /// DI manual con Riverpod 3 (`Provider<T>`, sin codegen) para buyer.
 
-/// Datasource remoto: mock o real según `AppConstants.useMockData`.
+/// Datasource remoto según flags: mock (demo) → Firestore → API REST.
 ///
-/// El mock vive aquí (provider sin autoDispose) para que su estado en
-/// memoria (vistas de producto) persista entre pantallas.
+/// Sin autoDispose para que el estado en memoria (vistas, cache de
+/// vendedores) persista entre pantallas durante la sesión.
 final buyerRemoteDatasourceProvider = Provider<BuyerRemoteDatasource>((ref) {
   if (AppConstants.useMockData) {
     return BuyerMockDatasource();
+  }
+  if (AppConstants.useFirestore) {
+    return BuyerFirestoreDatasource(
+      ref.watch(firestoreServiceProvider),
+      ref.watch(secureStorageProvider),
+    );
   }
   return BuyerRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });

@@ -17,6 +17,15 @@ class AppConstants {
   /// `false` → API REST propia (DioClient).
   static const bool useFirebaseAuth = true;
 
+  /// Cuando `useMockData` es false, elige el backend de datos:
+  /// `true` → Cloud Firestore (colecciones users/vendors/products/
+  /// price_reports/ratings/price_alerts);
+  /// `false` → API REST propia (DioClient).
+  ///
+  /// OJO: las reglas de Firestore exigen usuario autenticado, así que
+  /// requiere haber habilitado Phone sign-in en la consola de Firebase.
+  static const bool useFirestore = true;
+
   // --- Google Maps ---
   /// API key de Google Maps (proyecto mercado-cercano-28190).
   ///

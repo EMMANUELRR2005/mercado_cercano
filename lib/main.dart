@@ -46,6 +46,7 @@ Future<void> _initPushNotifications() async {
   }
 }
 
+
 /// Raíz de la app: tema, localización (es default / en) y router con
 /// guard de autenticación.
 class MercadoCercanoApp extends ConsumerWidget {
