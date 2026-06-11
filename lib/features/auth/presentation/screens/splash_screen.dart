@@ -49,7 +49,7 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
         await ref.read(authLocalDatasourceProvider).isOnboardingComplete();
     if (!mounted) return;
     if (onboardingDone) {
-      context.goNamed(RouteNames.authPhone);
+      context.goNamed(RouteNames.authLogin);
     } else {
       context.goNamed(RouteNames.onboarding);
     }

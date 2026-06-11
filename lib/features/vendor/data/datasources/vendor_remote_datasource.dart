@@ -8,7 +8,7 @@ import '../models/vendor_stats_model.dart';
 /// Contrato del datasource del panel del vendedor.
 ///
 /// Lo implementan [VendorRemoteDatasourceImpl] (API real) y
-/// `VendorMockDatasource` (datos simulados en memoria).
+/// `VendorFirestoreDatasource` (Cloud Firestore).
 /// Los métodos lanzan `DioException` / `AppException` ante errores;
 /// el BLoC los mapea a `Failure`.
 abstract class VendorRemoteDatasource {

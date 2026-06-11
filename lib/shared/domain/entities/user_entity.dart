@@ -10,6 +10,9 @@ enum UserRole { buyer, vendor }
 enum UserSubscription { free, pro, family }
 
 /// Usuario autenticado de MercadoCercano.
+///
+/// `phone` puede venir vacío: con Google/Apple/Email el teléfono ya no
+/// es parte del registro. `loginMethod` es 'google' | 'apple' | 'email'.
 @freezed
 abstract class UserEntity with _$UserEntity {
   const factory UserEntity({
@@ -18,6 +21,9 @@ abstract class UserEntity with _$UserEntity {
     required UserRole role,
     required DateTime createdAt,
     String? name,
+    String? email,
+    String? photoUrl,
+    String? loginMethod,
     double? rating,
     int? totalRatings,
     bool? isVerified,

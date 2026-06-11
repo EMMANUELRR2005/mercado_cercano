@@ -1,66 +1,87 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_handler.dart';
+import '../../../../core/firebase/activity_logger.dart';
 import '../../../../shared/domain/entities/user_entity.dart';
-import '../../domain/auth_exceptions.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/usecases/logout_usecase.dart';
-import '../../domain/usecases/send_otp_usecase.dart';
-import '../../domain/usecases/verify_otp_usecase.dart';
 
 part 'auth_event.dart';
 part 'auth_state.dart';
 
-/// BLoC del flujo de autenticación por OTP.
+/// BLoC del flujo de autenticación: Google (principal), Apple (iOS) y
+/// Email/Password (respaldo).
 ///
-/// Convención de errores: los usecases/repositorio LANZAN excepciones;
-/// este BLoC es el único punto donde se capturan y se mapean a `Failure`
-/// (mensajes en español) con `mapAppException` / `mapDioException`.
-///
-/// Lleva el contador interno de intentos de OTP: tras
-/// `AppConstants.maxOtpAttempts` códigos incorrectos emite
-/// [MaxAttemptsReached] y solo un reenvío reinicia el contador.
+/// Convención de errores: el repositorio LANZA excepciones; este BLoC es
+/// el único punto donde se capturan y se mapean a `Failure` (mensajes en
+/// español) con `mapAppException` / `mapDioException`.
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   AuthBloc({
-    required this._sendOtp,
-    required this._verifyOtp,
-    required this._logout,
     required this._repository,
+    this._activityLogger,
   }) : super(const AuthInitial()) {
     on<AuthCheckRequested>(_onCheckRequested);
-    on<SendOtpRequested>(_onSendOtpRequested);
-    on<VerifyOtpRequested>(_onVerifyOtpRequested);
-    on<ResendOtpRequested>(_onResendOtpRequested);
+    on<GoogleSignInRequested>(
+      (event, emit) => _signIn(emit, _repository.signInWithGoogle),
+    );
+    on<AppleSignInRequested>(
+      (event, emit) => _signIn(emit, _repository.signInWithApple),
+    );
+    on<EmailSignUpRequested>(
+      (event, emit) => _signIn(
+        emit,
+        () => _repository.signUpWithEmail(
+          name: event.name,
+          email: event.email,
+          password: event.password,
+        ),
+      ),
+    );
+    on<EmailSignInRequested>(
+      (event, emit) => _signIn(
+        emit,
+        () => _repository.signInWithEmail(
+          email: event.email,
+          password: event.password,
+        ),
+      ),
+    );
+    on<PasswordResetRequested>(_onPasswordResetRequested);
     on<RoleSelected>(_onRoleSelected);
     on<LogoutRequested>(_onLogoutRequested);
+    on<SessionExpiredExternally>(_onSessionExpiredExternally);
+
+    // authStateChanges como fuente de verdad: si Firebase cierra la
+    // sesión por fuera (token revocado, usuario borrado), reflejarlo.
+    _sessionSub = _repository.watchSessionActive().listen(
+      (active) {
+        if (!active && state is Authenticated) {
+          add(const SessionExpiredExternally());
+        }
+      },
+      onError: (_) {},
+    );
   }
 
-  final SendOtpUsecase _sendOtp;
-  final VerifyOtpUsecase _verifyOtp;
-  final LogoutUsecase _logout;
-
-  // checkAuthStatus y selectRole no tienen usecase dedicado: el BLoC
-  // los invoca directamente en el repositorio.
   final AuthRepository _repository;
 
-  /// Intentos de OTP fallidos desde el último envío.
-  int _failedAttempts = 0;
+  /// Auditoría best-effort (login/logout); opcional en tests.
+  final ActivityLogger? _activityLogger;
 
-  /// Último teléfono al que se envió OTP (para reenvíos).
-  String? _lastPhone;
+  StreamSubscription<bool>? _sessionSub;
 
   // -----------------------------------------------------------------------
-  // Helpers síncronos para el router (Agente 7)
+  // Helpers síncronos para el router
   // -----------------------------------------------------------------------
 
   /// `true` cuando hay sesión activa (estado [Authenticated]).
   bool get isAuthenticated => state is Authenticated;
 
-  /// Rol actual en formato string ('buyer'/'vendor'), o `null` sin sesión
-  /// o si el usuario nuevo aún no elige rol.
+  /// Rol actual ('buyer'/'vendor'), o `null` sin sesión o si el usuario
+  /// nuevo aún no elige rol.
   String? get currentRoleName => switch (state) {
         Authenticated(:final user, :final isNewUser) =>
           isNewUser ? null : user.role.name,
@@ -79,79 +100,47 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final user = await _repository.checkAuthStatus();
       emit(user != null ? Authenticated(user) : const Unauthenticated());
-    } catch (e) {
-      // Ante cualquier fallo restaurando sesión, tratamos como no autenticado.
+    } catch (_) {
+      // Ante cualquier fallo restaurando sesión: no autenticado.
       emit(const Unauthenticated());
     }
   }
 
-  Future<void> _onSendOtpRequested(
-    SendOtpRequested event,
+  /// Flujo común de los 4 métodos de acceso.
+  Future<void> _signIn(
     Emitter<AuthState> emit,
+    Future<SignInResult> Function() method,
   ) async {
     emit(const AuthLoading());
     try {
-      await _sendOtp(event.phone);
-      _lastPhone = event.phone;
-      _failedAttempts = 0;
-      emit(OtpSent(event.phone));
-    } catch (e) {
-      emit(AuthError(_messageOf(e)));
-    }
-  }
-
-  Future<void> _onVerifyOtpRequested(
-    VerifyOtpRequested event,
-    Emitter<AuthState> emit,
-  ) async {
-    if (_failedAttempts >= AppConstants.maxOtpAttempts) {
-      emit(const MaxAttemptsReached());
-      return;
-    }
-
-    emit(const AuthLoading());
-    try {
-      final result = await _verifyOtp(
-        phone: event.phone,
-        otp: event.otp,
-        role: event.role,
-      );
-      _failedAttempts = 0;
+      final result = await method();
       emit(Authenticated(result.user, isNewUser: result.isNewUser));
-    } on OtpExpiredException {
-      emit(const OtpExpired());
+      // Auditoría best-effort (nunca interrumpe el flujo).
+      unawaited(_activityLogger?.log(
+        ActivityAction.login,
+        metadata: {'method': ?result.user.loginMethod},
+      ));
     } on ValidationException catch (e) {
-      // Código incorrecto: consume un intento.
-      _failedAttempts++;
-      if (_failedAttempts >= AppConstants.maxOtpAttempts) {
-        emit(const MaxAttemptsReached());
+      // Incluye la cancelación del selector de cuenta: volver al login
+      // sin mostrar un error aparatoso.
+      if (e.message == 'Operación cancelada') {
+        emit(const Unauthenticated());
       } else {
-        emit(AuthError(
-          mapAppException(e).message,
-          attemptsLeft: AppConstants.maxOtpAttempts - _failedAttempts,
-        ));
+        emit(AuthError(mapAppException(e).message));
       }
     } catch (e) {
-      // Errores de red/servidor NO consumen intentos.
       emit(AuthError(_messageOf(e)));
     }
   }
 
-  Future<void> _onResendOtpRequested(
-    ResendOtpRequested event,
+  Future<void> _onPasswordResetRequested(
+    PasswordResetRequested event,
     Emitter<AuthState> emit,
   ) async {
-    final phone = _lastPhone;
-    if (phone == null) {
-      emit(const AuthError('No hay un número registrado. Vuelve a ingresarlo.'));
-      return;
-    }
-
     emit(const AuthLoading());
     try {
-      await _sendOtp(phone);
-      _failedAttempts = 0;
-      emit(OtpSent(phone));
+      await _repository.sendPasswordReset(event.email);
+      emit(PasswordResetSent(event.email));
     } catch (e) {
       emit(AuthError(_messageOf(e)));
     }
@@ -175,14 +164,28 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     Emitter<AuthState> emit,
   ) async {
     emit(const AuthLoading());
+    // El log va antes de limpiar storage (necesita el userId guardado).
+    await _activityLogger?.log(ActivityAction.logout);
     try {
-      await _logout();
+      await _repository.logout();
     } finally {
       // Pase lo que pase, la sesión local queda cerrada.
-      _lastPhone = null;
-      _failedAttempts = 0;
       emit(const Unauthenticated());
     }
+  }
+
+  /// Firebase cerró la sesión por fuera (token revocado/usuario borrado).
+  void _onSessionExpiredExternally(
+    SessionExpiredExternally event,
+    Emitter<AuthState> emit,
+  ) {
+    emit(const Unauthenticated());
+  }
+
+  @override
+  Future<void> close() async {
+    await _sessionSub?.cancel();
+    return super.close();
   }
 
   // -----------------------------------------------------------------------
@@ -193,7 +196,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     return switch (error) {
       AppException e => mapAppException(e).message,
       DioException e => mapDioException(e).message,
-      OtpExpiredException e => e.message,
       _ => 'Ocurrió un error inesperado. Intenta de nuevo.',
     };
   }

@@ -26,6 +26,19 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- Google Sign-In: reemplazar con el REVERSED_CLIENT_ID que aparece
+	     en GoogleService-Info.plist DESPUÉS de habilitar el proveedor
+	     Google en Firebase Console y re-descargar el plist
+	     (flutterfire configure). -->
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.googleusercontent.apps.427612490525-rbk8u8mrua12ripepc8qmj3e85d4b5vh</string>
+			</array>
+		</dict>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
 	<key>NSLocationAlwaysUsageDescription</key>

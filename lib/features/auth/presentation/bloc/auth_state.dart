@@ -10,16 +10,9 @@ class AuthInitial extends AuthState {
   const AuthInitial();
 }
 
-/// Operación en curso (enviar/verificar OTP, logout, etc.).
+/// Operación en curso (login, registro, logout, etc.).
 class AuthLoading extends AuthState {
   const AuthLoading();
-}
-
-/// El OTP fue enviado a [phone] (8 dígitos, sin prefijo).
-class OtpSent extends AuthState {
-  const OtpSent(this.phone);
-
-  final String phone;
 }
 
 /// Sesión activa. Si [isNewUser] es `true`, el usuario aún debe
@@ -31,23 +24,18 @@ class Authenticated extends AuthState {
   final bool isNewUser;
 }
 
-/// Error con mensaje en español listo para la UI. [attemptsLeft] viene
-/// poblado cuando el error fue un OTP incorrecto.
+/// Error con mensaje en español listo para la UI.
 class AuthError extends AuthState {
-  const AuthError(this.message, {this.attemptsLeft});
+  const AuthError(this.message);
 
   final String message;
-  final int? attemptsLeft;
 }
 
-/// El código OTP expiró (5 minutos): hay que pedir uno nuevo.
-class OtpExpired extends AuthState {
-  const OtpExpired();
-}
+/// El correo de restablecimiento de contraseña fue enviado a [email].
+class PasswordResetSent extends AuthState {
+  const PasswordResetSent(this.email);
 
-/// Se agotaron los 3 intentos de OTP: hay que solicitar un nuevo código.
-class MaxAttemptsReached extends AuthState {
-  const MaxAttemptsReached();
+  final String email;
 }
 
 /// No hay sesión activa.

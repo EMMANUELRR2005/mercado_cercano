@@ -12,7 +12,20 @@
           "package_name": "com.example.mercado_cercano"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "427612490525-ug4jptp5pubbj4v1t14n1rsssbjq6708.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.mercado_cercano",
+            "certificate_hash": "7db218b06a7a0c61d67ae837f85fa674d0dbda5e"
+          }
+        },
+        {
+          "client_id": "427612490525-j2ask6k14eej95ggf172sm0fvbetq0mr.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyD-_CE0eDyH5vJ5rZup_5XNFMgArC6xq-g"
@@ -20,7 +33,19 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "427612490525-j2ask6k14eej95ggf172sm0fvbetq0mr.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "427612490525-rbk8u8mrua12ripepc8qmj3e85d4b5vh.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.mercadoCercano"
+              }
+            }
+          ]
         }
       }
     }

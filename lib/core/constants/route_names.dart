@@ -13,11 +13,11 @@ class RouteNames {
   static const String onboardingPath = '/onboarding';
 
   // --- Auth ---
-  static const String authPhone = 'authPhone';
-  static const String authPhonePath = '/auth/phone';
+  static const String authLogin = 'authLogin';
+  static const String authLoginPath = '/auth/login';
 
-  static const String authOtp = 'authOtp';
-  static const String authOtpPath = '/auth/otp';
+  static const String authEmail = 'authEmail';
+  static const String authEmailPath = '/auth/email';
 
   static const String authRole = 'authRole';
   static const String authRolePath = '/auth/role';

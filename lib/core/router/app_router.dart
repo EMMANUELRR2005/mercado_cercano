@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/presentation/screens/onboarding_screen.dart';
-import '../../features/auth/presentation/screens/otp_verification_screen.dart';
-import '../../features/auth/presentation/screens/phone_input_screen.dart';
+import '../../features/auth/presentation/screens/email_auth_screen.dart';
+import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/auth/presentation/screens/role_selector_screen.dart';
 import '../../features/auth/presentation/screens/splash_screen.dart';
 import '../../features/buyer/presentation/screens/buyer_home_screen.dart';
@@ -55,7 +55,7 @@ GoRouter buildRouter({
       if (!hasToken) {
         // Sin sesión: solo se permiten splash, onboarding y auth.
         if (isSplash || isOnboarding || isAuthRoute) return null;
-        return RouteNames.authPhonePath;
+        return RouteNames.authLoginPath;
       }
 
       final role = getRole();
@@ -99,16 +99,14 @@ GoRouter buildRouter({
         builder: (context, state) => const OnboardingScreen(),
       ),
       GoRoute(
-        path: RouteNames.authPhonePath,
-        name: RouteNames.authPhone,
-        builder: (context, state) => const PhoneInputScreen(),
+        path: RouteNames.authLoginPath,
+        name: RouteNames.authLogin,
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
-        path: RouteNames.authOtpPath,
-        name: RouteNames.authOtp,
-        builder: (context, state) => OtpVerificationScreen(
-          phone: state.uri.queryParameters['phone'] ?? '',
-        ),
+        path: RouteNames.authEmailPath,
+        name: RouteNames.authEmail,
+        builder: (context, state) => const EmailAuthScreen(),
       ),
       GoRoute(
         path: RouteNames.authRolePath,

@@ -5,38 +5,50 @@ sealed class AuthEvent {
   const AuthEvent();
 }
 
-/// Disparado por el splash: restaura la sesión guardada (token en storage).
+/// Disparado por el splash: restaura la sesión guardada.
 class AuthCheckRequested extends AuthEvent {
   const AuthCheckRequested();
 }
 
-/// Solicita el envío del OTP al [phone] (8 dígitos, sin prefijo).
-class SendOtpRequested extends AuthEvent {
-  const SendOtpRequested(this.phone);
-
-  final String phone;
+/// Login con Google (método principal).
+class GoogleSignInRequested extends AuthEvent {
+  const GoogleSignInRequested();
 }
 
-/// Verifica el [otp] recibido. [role] solo se pasa si el flujo ya
-/// conoce el rol (normalmente es `null` y el rol se elige después).
-class VerifyOtpRequested extends AuthEvent {
-  const VerifyOtpRequested({
-    required this.phone,
-    required this.otp,
-    this.role,
+/// Login con Apple (solo iOS).
+class AppleSignInRequested extends AuthEvent {
+  const AppleSignInRequested();
+}
+
+/// Registro con email y contraseña.
+class EmailSignUpRequested extends AuthEvent {
+  const EmailSignUpRequested({
+    required this.name,
+    required this.email,
+    required this.password,
   });
 
-  final String phone;
-  final String otp;
-  final UserRole? role;
+  final String name;
+  final String email;
+  final String password;
 }
 
-/// Reenvía el OTP al último teléfono usado y reinicia los intentos.
-class ResendOtpRequested extends AuthEvent {
-  const ResendOtpRequested();
+/// Inicio de sesión con email y contraseña.
+class EmailSignInRequested extends AuthEvent {
+  const EmailSignInRequested({required this.email, required this.password});
+
+  final String email;
+  final String password;
 }
 
-/// El usuario nuevo eligió rol en el selector (post verificación).
+/// "¿Olvidaste tu contraseña?": envía el correo de restablecimiento.
+class PasswordResetRequested extends AuthEvent {
+  const PasswordResetRequested(this.email);
+
+  final String email;
+}
+
+/// El usuario nuevo eligió rol en el selector (post login).
 class RoleSelected extends AuthEvent {
   const RoleSelected(this.role);
 
@@ -46,4 +58,10 @@ class RoleSelected extends AuthEvent {
 /// Cierra la sesión.
 class LogoutRequested extends AuthEvent {
   const LogoutRequested();
+}
+
+/// `authStateChanges` reportó que la sesión ya no existe
+/// (token revocado, usuario eliminado): cerrar la sesión local.
+class SessionExpiredExternally extends AuthEvent {
+  const SessionExpiredExternally();
 }

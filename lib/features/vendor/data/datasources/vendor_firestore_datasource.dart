@@ -1,7 +1,10 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/firebase/firebase_storage_service.dart';
 import '../../../../core/firebase/firestore_service.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../domain/entities/product_draft.dart';
@@ -16,13 +19,32 @@ import 'vendor_remote_datasource.dart';
 /// - `vendors/{uid}`: el id del documento ES el uid del usuario dueño.
 /// - `products.vendorId` referencia ese uid.
 class VendorFirestoreDatasource implements VendorRemoteDatasource {
-  VendorFirestoreDatasource(this._firestore, this._secureStorage);
+  VendorFirestoreDatasource(
+    this._firestore,
+    this._secureStorage,
+    this._storage,
+  );
 
   final FirestoreService _firestore;
   final SecureStorageService _secureStorage;
+  final FirebaseStorageService _storage;
 
   static const _products = 'products';
   static const _vendors = 'vendors';
+
+  /// Sube la foto a Storage si [photoUrl] es una ruta local del picker.
+  ///
+  /// Degradación: sin bucket (plan Spark) o sin red, la publicación NO
+  /// se bloquea — se usa un placeholder y se sigue.
+  Future<String> _resolvePhotoUrl(String photoUrl, String uid) async {
+    if (photoUrl.isEmpty || photoUrl.startsWith('http')) return photoUrl;
+    try {
+      return await _storage.uploadProductPhoto(File(photoUrl), uid);
+    } on AppException {
+      // Storage no disponible: placeholder estable por vendedor.
+      return 'https://picsum.photos/seed/$uid${DateTime.now().millisecondsSinceEpoch % 97}/400/300';
+    }
+  }
 
   Future<String> _uid() async {
     final id = await _secureStorage.getUserId();
@@ -84,6 +106,9 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
       );
     }
 
+    // Foto: si viene del picker (ruta local) se sube a Storage primero.
+    final photoUrl = await _resolvePhotoUrl(draft.photoUrl, uid);
+
     final now = DateTime.now();
     final expiresAt =
         now.add(const Duration(hours: AppConstants.productExpiryHours));
@@ -92,7 +117,7 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
       'name': draft.name,
       'category': draft.category.name,
       'price': draft.price,
-      'photoUrl': draft.photoUrl,
+      'photoUrl': photoUrl,
       'isAvailable': true,
       'isFeatured': false,
       'expiresAt': Timestamp.fromDate(expiresAt),
@@ -109,7 +134,7 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
       name: draft.name,
       category: draft.category.name,
       price: draft.price,
-      photoUrl: draft.photoUrl,
+      photoUrl: photoUrl,
       isAvailable: true,
       isFeatured: false,
       expiresAt: expiresAt,
@@ -123,16 +148,19 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
 
   @override
   Future<ProductModel> updateProduct(ProductModel product) async {
+    // Si la edición trae una foto nueva del picker, subirla primero.
+    final photoUrl =
+        await _resolvePhotoUrl(product.photoUrl, product.vendorId);
     await _firestore.updateDocument(_products, product.id, {
       'name': product.name,
       'category': product.category,
       'price': product.price,
-      'photoUrl': product.photoUrl,
+      'photoUrl': photoUrl,
       'isAvailable': product.isAvailable,
       'unit': product.unit,
       'description': product.description,
     });
-    return product;
+    return product.copyWith(photoUrl: photoUrl);
   }
 
   @override

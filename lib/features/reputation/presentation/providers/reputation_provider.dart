@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
+import '../../data/datasources/reputation_firestore_datasource.dart';
 import '../../data/datasources/reputation_remote_datasource.dart';
 import '../../data/repositories/reputation_repository_impl.dart';
 import '../../domain/repositories/reputation_repository.dart';
@@ -12,11 +13,14 @@ import '../bloc/reputation_bloc.dart';
 
 /// DI manual con Riverpod 3 (`Provider<T>`, sin codegen) para reputation.
 
-/// Datasource remoto: mock o real según `AppConstants.useMockData`.
+/// Datasource remoto: Firestore (producción) o API REST propia.
 final reputationRemoteDatasourceProvider =
     Provider<ReputationRemoteDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return MockReputationRemoteDatasource();
+  if (AppConstants.useFirestore) {
+    return ReputationFirestoreDatasource(
+      ref.watch(firestoreServiceProvider),
+      ref.watch(secureStorageProvider),
+    );
   }
   return ReputationRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });
@@ -54,6 +58,7 @@ final reputationBlocProvider = Provider.autoDispose<ReputationBloc>((ref) {
     getVendorRatings: ref.watch(getVendorRatingsUsecaseProvider),
     submitRating: ref.watch(submitRatingUsecaseProvider),
     reportFraud: ref.watch(reportFraudUsecaseProvider),
+    activityLogger: ref.watch(activityLoggerProvider),
   );
   ref.onDispose(bloc.close);
   return bloc;

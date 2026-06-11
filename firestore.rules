@@ -61,5 +61,20 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.resource.data.userId == request.auth.uid;
     }
+
+    // vendor_stats: solo el propio vendedor lee sus métricas; solo
+    // procesos de backend (Cloud Functions) escriben.
+    match /vendor_stats/{vendorId} {
+      allow read: if signedIn() && request.auth.uid == vendorId;
+      allow write: if false;
+    }
+
+    // activity_logs: cada usuario crea sus propios registros de
+    // auditoría; nadie los lee/edita desde el cliente.
+    match /activity_logs/{logId} {
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid;
+      allow read, update, delete: if false;
+    }
   }
 }

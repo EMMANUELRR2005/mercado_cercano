@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../data/datasources/vendor_firestore_datasource.dart';
-import '../../data/datasources/vendor_mock_datasource.dart';
 import '../../data/datasources/vendor_profile_datasource.dart';
 import '../../data/datasources/vendor_remote_datasource.dart';
 import '../../data/repositories/vendor_repository_impl.dart';
@@ -19,37 +18,28 @@ import '../bloc/vendor_bloc.dart';
 
 /// DI del feature del vendedor (Riverpod 3, `Provider<T>` manual).
 ///
-/// PARA EL AGENTE 7 (router):
-/// - `vendorProductsBlocProvider` y `vendorStatsBlocProvider` son
-///   autoDispose: viven mientras alguna pantalla del vendedor los observe.
-/// - El datasource NO es autoDispose: en modo mock mantiene el catálogo
-///   en memoria durante toda la sesión (la demo es interactiva).
+/// `vendorProductsBlocProvider` y `vendorStatsBlocProvider` son
+/// autoDispose: viven mientras alguna pantalla del vendedor los observe.
 
-/// Datasource del vendedor según flags: mock (demo) → Firestore → API REST.
+/// Datasource del vendedor: Firestore (producción) o API REST propia.
 final vendorRemoteDatasourceProvider = Provider<VendorRemoteDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return VendorMockDatasource();
-  }
   if (AppConstants.useFirestore) {
     return VendorFirestoreDatasource(
       ref.watch(firestoreServiceProvider),
       ref.watch(secureStorageProvider),
+      ref.watch(firebaseStorageServiceProvider),
     );
   }
   return VendorRemoteDatasourceImpl(client: ref.watch(dioClientProvider));
 });
 
-/// Perfil público del negocio (`vendors/{uid}`): mock en demo,
-/// Firestore + Storage en modo real. Sin autoDispose: en demo el perfil
-/// vive en memoria durante toda la sesión.
+/// Perfil público del negocio (`vendors/{uid}`): Firestore + Storage.
 final vendorProfileDatasourceProvider =
     Provider<VendorProfileDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return MockVendorProfileDatasource();
-  }
   return FirestoreVendorProfileDatasource(
     ref.watch(firestoreServiceProvider),
     ref.watch(secureStorageProvider),
+    ref.watch(firebaseStorageServiceProvider),
   );
 });
 
@@ -100,6 +90,7 @@ final vendorProductsBlocProvider =
   final bloc = VendorProductsBloc(
     getMyProducts: ref.watch(getMyProductsUsecaseProvider),
     watchMyProducts: ref.watch(watchMyProductsUsecaseProvider),
+    activityLogger: ref.watch(activityLoggerProvider),
     createProduct: ref.watch(createProductUsecaseProvider),
     updateProduct: ref.watch(updateProductUsecaseProvider),
     markSoldOut: ref.watch(markSoldOutUsecaseProvider),

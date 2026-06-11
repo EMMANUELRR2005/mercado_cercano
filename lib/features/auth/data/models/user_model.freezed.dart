@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$UserModel {
 
- String get id; String get phone; String get role; DateTime get createdAt; String? get name; double? get rating; int? get totalRatings; bool? get isVerified; String? get subscription;
+ String get id; String get phone; String get role; DateTime get createdAt; String? get name; String? get email; String? get photoUrl; String? get loginMethod; double? get rating; int? get totalRatings; bool? get isVerified; String? get subscription;
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $UserModelCopyWith<UserModel> get copyWith => _$UserModelCopyWithImpl<UserModel>
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.role, role) || other.role == role)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.name, name) || other.name == name)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRatings, totalRatings) || other.totalRatings == totalRatings)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.subscription, subscription) || other.subscription == subscription));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.role, role) || other.role == role)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.loginMethod, loginMethod) || other.loginMethod == loginMethod)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRatings, totalRatings) || other.totalRatings == totalRatings)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.subscription, subscription) || other.subscription == subscription));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,phone,role,createdAt,name,rating,totalRatings,isVerified,subscription);
+int get hashCode => Object.hash(runtimeType,id,phone,role,createdAt,name,email,photoUrl,loginMethod,rating,totalRatings,isVerified,subscription);
 
 @override
 String toString() {
-  return 'UserModel(id: $id, phone: $phone, role: $role, createdAt: $createdAt, name: $name, rating: $rating, totalRatings: $totalRatings, isVerified: $isVerified, subscription: $subscription)';
+  return 'UserModel(id: $id, phone: $phone, role: $role, createdAt: $createdAt, name: $name, email: $email, photoUrl: $photoUrl, loginMethod: $loginMethod, rating: $rating, totalRatings: $totalRatings, isVerified: $isVerified, subscription: $subscription)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $UserModelCopyWith<$Res>  {
   factory $UserModelCopyWith(UserModel value, $Res Function(UserModel) _then) = _$UserModelCopyWithImpl;
 @useResult
 $Res call({
- String id, String phone, String role, DateTime createdAt, String? name, double? rating, int? totalRatings, bool? isVerified, String? subscription
+ String id, String phone, String role, DateTime createdAt, String? name, String? email, String? photoUrl, String? loginMethod, double? rating, int? totalRatings, bool? isVerified, String? subscription
 });
 
 
@@ -65,13 +65,16 @@ class _$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? phone = null,Object? role = null,Object? createdAt = null,Object? name = freezed,Object? rating = freezed,Object? totalRatings = freezed,Object? isVerified = freezed,Object? subscription = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? id = null,Object? phone = null,Object? role = null,Object? createdAt = null,Object? name = freezed,Object? email = freezed,Object? photoUrl = freezed,Object? loginMethod = freezed,Object? rating = freezed,Object? totalRatings = freezed,Object? isVerified = freezed,Object? subscription = freezed,}) {
   return _then(_self.copyWith(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,phone: null == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,loginMethod: freezed == loginMethod ? _self.loginMethod : loginMethod // ignore: cast_nullable_to_non_nullable
 as String?,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as double?,totalRatings: freezed == totalRatings ? _self.totalRatings : totalRatings // ignore: cast_nullable_to_non_nullable
 as int?,isVerified: freezed == isVerified ? _self.isVerified : isVerified // ignore: cast_nullable_to_non_nullable
@@ -161,10 +164,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String phone,  String role,  DateTime createdAt,  String? name,  double? rating,  int? totalRatings,  bool? isVerified,  String? subscription)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String id,  String phone,  String role,  DateTime createdAt,  String? name,  String? email,  String? photoUrl,  String? loginMethod,  double? rating,  int? totalRatings,  bool? isVerified,  String? subscription)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
-return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that.rating,_that.totalRatings,_that.isVerified,_that.subscription);case _:
+return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that.email,_that.photoUrl,_that.loginMethod,_that.rating,_that.totalRatings,_that.isVerified,_that.subscription);case _:
   return orElse();
 
 }
@@ -182,10 +185,10 @@ return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String phone,  String role,  DateTime createdAt,  String? name,  double? rating,  int? totalRatings,  bool? isVerified,  String? subscription)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String id,  String phone,  String role,  DateTime createdAt,  String? name,  String? email,  String? photoUrl,  String? loginMethod,  double? rating,  int? totalRatings,  bool? isVerified,  String? subscription)  $default,) {final _that = this;
 switch (_that) {
 case _UserModel():
-return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that.rating,_that.totalRatings,_that.isVerified,_that.subscription);case _:
+return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that.email,_that.photoUrl,_that.loginMethod,_that.rating,_that.totalRatings,_that.isVerified,_that.subscription);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -202,10 +205,10 @@ return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String phone,  String role,  DateTime createdAt,  String? name,  double? rating,  int? totalRatings,  bool? isVerified,  String? subscription)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String id,  String phone,  String role,  DateTime createdAt,  String? name,  String? email,  String? photoUrl,  String? loginMethod,  double? rating,  int? totalRatings,  bool? isVerified,  String? subscription)?  $default,) {final _that = this;
 switch (_that) {
 case _UserModel() when $default != null:
-return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that.rating,_that.totalRatings,_that.isVerified,_that.subscription);case _:
+return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that.email,_that.photoUrl,_that.loginMethod,_that.rating,_that.totalRatings,_that.isVerified,_that.subscription);case _:
   return null;
 
 }
@@ -217,7 +220,7 @@ return $default(_that.id,_that.phone,_that.role,_that.createdAt,_that.name,_that
 @JsonSerializable()
 
 class _UserModel extends UserModel {
-  const _UserModel({required this.id, required this.phone, required this.role, required this.createdAt, this.name, this.rating, this.totalRatings, this.isVerified, this.subscription}): super._();
+  const _UserModel({required this.id, required this.phone, required this.role, required this.createdAt, this.name, this.email, this.photoUrl, this.loginMethod, this.rating, this.totalRatings, this.isVerified, this.subscription}): super._();
   factory _UserModel.fromJson(Map<String, dynamic> json) => _$UserModelFromJson(json);
 
 @override final  String id;
@@ -225,6 +228,9 @@ class _UserModel extends UserModel {
 @override final  String role;
 @override final  DateTime createdAt;
 @override final  String? name;
+@override final  String? email;
+@override final  String? photoUrl;
+@override final  String? loginMethod;
 @override final  double? rating;
 @override final  int? totalRatings;
 @override final  bool? isVerified;
@@ -243,16 +249,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.role, role) || other.role == role)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.name, name) || other.name == name)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRatings, totalRatings) || other.totalRatings == totalRatings)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.subscription, subscription) || other.subscription == subscription));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _UserModel&&(identical(other.id, id) || other.id == id)&&(identical(other.phone, phone) || other.phone == phone)&&(identical(other.role, role) || other.role == role)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt)&&(identical(other.name, name) || other.name == name)&&(identical(other.email, email) || other.email == email)&&(identical(other.photoUrl, photoUrl) || other.photoUrl == photoUrl)&&(identical(other.loginMethod, loginMethod) || other.loginMethod == loginMethod)&&(identical(other.rating, rating) || other.rating == rating)&&(identical(other.totalRatings, totalRatings) || other.totalRatings == totalRatings)&&(identical(other.isVerified, isVerified) || other.isVerified == isVerified)&&(identical(other.subscription, subscription) || other.subscription == subscription));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,id,phone,role,createdAt,name,rating,totalRatings,isVerified,subscription);
+int get hashCode => Object.hash(runtimeType,id,phone,role,createdAt,name,email,photoUrl,loginMethod,rating,totalRatings,isVerified,subscription);
 
 @override
 String toString() {
-  return 'UserModel(id: $id, phone: $phone, role: $role, createdAt: $createdAt, name: $name, rating: $rating, totalRatings: $totalRatings, isVerified: $isVerified, subscription: $subscription)';
+  return 'UserModel(id: $id, phone: $phone, role: $role, createdAt: $createdAt, name: $name, email: $email, photoUrl: $photoUrl, loginMethod: $loginMethod, rating: $rating, totalRatings: $totalRatings, isVerified: $isVerified, subscription: $subscription)';
 }
 
 
@@ -263,7 +269,7 @@ abstract mixin class _$UserModelCopyWith<$Res> implements $UserModelCopyWith<$Re
   factory _$UserModelCopyWith(_UserModel value, $Res Function(_UserModel) _then) = __$UserModelCopyWithImpl;
 @override @useResult
 $Res call({
- String id, String phone, String role, DateTime createdAt, String? name, double? rating, int? totalRatings, bool? isVerified, String? subscription
+ String id, String phone, String role, DateTime createdAt, String? name, String? email, String? photoUrl, String? loginMethod, double? rating, int? totalRatings, bool? isVerified, String? subscription
 });
 
 
@@ -280,13 +286,16 @@ class __$UserModelCopyWithImpl<$Res>
 
 /// Create a copy of UserModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? phone = null,Object? role = null,Object? createdAt = null,Object? name = freezed,Object? rating = freezed,Object? totalRatings = freezed,Object? isVerified = freezed,Object? subscription = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? id = null,Object? phone = null,Object? role = null,Object? createdAt = null,Object? name = freezed,Object? email = freezed,Object? photoUrl = freezed,Object? loginMethod = freezed,Object? rating = freezed,Object? totalRatings = freezed,Object? isVerified = freezed,Object? subscription = freezed,}) {
   return _then(_UserModel(
 id: null == id ? _self.id : id // ignore: cast_nullable_to_non_nullable
 as String,phone: null == phone ? _self.phone : phone // ignore: cast_nullable_to_non_nullable
 as String,role: null == role ? _self.role : role // ignore: cast_nullable_to_non_nullable
 as String,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,name: freezed == name ? _self.name : name // ignore: cast_nullable_to_non_nullable
+as String?,email: freezed == email ? _self.email : email // ignore: cast_nullable_to_non_nullable
+as String?,photoUrl: freezed == photoUrl ? _self.photoUrl : photoUrl // ignore: cast_nullable_to_non_nullable
+as String?,loginMethod: freezed == loginMethod ? _self.loginMethod : loginMethod // ignore: cast_nullable_to_non_nullable
 as String?,rating: freezed == rating ? _self.rating : rating // ignore: cast_nullable_to_non_nullable
 as double?,totalRatings: freezed == totalRatings ? _self.totalRatings : totalRatings // ignore: cast_nullable_to_non_nullable
 as int?,isVerified: freezed == isVerified ? _self.isVerified : isVerified // ignore: cast_nullable_to_non_nullable

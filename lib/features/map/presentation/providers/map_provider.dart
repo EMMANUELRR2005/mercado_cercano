@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../data/datasources/map_firestore_datasource.dart';
-import '../../data/datasources/map_mock_datasource.dart';
 import '../../data/datasources/map_remote_datasource.dart';
 import '../../data/datasources/map_websocket_datasource.dart';
 import '../../data/datasources/user_location_service.dart';
@@ -26,24 +25,16 @@ final _mapFirestoreDatasourceProvider =
   return datasource;
 });
 
-/// Datasource REST según flags: mock (demo) → Firestore → API real.
+/// Datasource REST: Firestore (producción) o API real.
 final mapRemoteDatasourceProvider = Provider<MapRemoteDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return MockMapRemoteDatasource();
-  }
   if (AppConstants.useFirestore) {
     return ref.watch(_mapFirestoreDatasourceProvider);
   }
   return MapRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });
 
-/// Datasource de tiempo real según flags: mock → Firestore → WebSocket.
+/// Datasource de tiempo real: Firestore (snapshots) o WebSocket.
 final mapWebsocketDatasourceProvider = Provider<MapWebsocketDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    final datasource = MockMapWebsocketDatasource();
-    ref.onDispose(datasource.dispose);
-    return datasource;
-  }
   if (AppConstants.useFirestore) {
     return ref.watch(_mapFirestoreDatasourceProvider);
   }

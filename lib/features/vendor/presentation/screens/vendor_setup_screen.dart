@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -11,6 +12,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/route_names.dart';
+import '../../../../core/di/core_providers.dart';
+import '../../../../core/firebase/activity_logger.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_handler.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -260,6 +263,12 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
             ),
             localPhotoPath: _pickedPhotoPath,
           );
+      // Auditoría best-effort.
+      unawaited(
+        ref
+            .read(activityLoggerProvider)
+            .log(ActivityAction.vendorSetupCompleted),
+      );
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

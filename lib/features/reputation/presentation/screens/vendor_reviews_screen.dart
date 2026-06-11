@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/di/core_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
@@ -25,6 +26,7 @@ class VendorReviewsScreen extends ConsumerWidget {
         getVendorRatings: ref.read(getVendorRatingsUsecaseProvider),
         submitRating: ref.read(submitRatingUsecaseProvider),
         reportFraud: ref.read(reportFraudUsecaseProvider),
+        activityLogger: ref.read(activityLoggerProvider),
       )..add(VendorRatingsRequested(vendorId)),
       child: Scaffold(
         appBar: AppBar(title: const Text('Reseñas del vendedor')),

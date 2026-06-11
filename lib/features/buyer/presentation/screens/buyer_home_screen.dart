@@ -88,7 +88,11 @@ class _BuyerHomeScreenState extends ConsumerState<BuyerHomeScreen> {
         body: SafeArea(
           child: Column(
             children: [
-              const OfflineBanner(),
+              // Al recuperar conexión se recarga la home automáticamente.
+              OfflineBanner(
+                onReconnected: () =>
+                    _bloc.add(const BuyerHomeRequested()),
+              ),
               Expanded(
                 child: BlocBuilder<BuyerBloc, BuyerState>(
                   builder: (context, state) {

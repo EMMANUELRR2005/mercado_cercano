@@ -4,7 +4,6 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../../price_index/presentation/providers/price_provider.dart';
 import '../../data/datasources/buyer_firestore_datasource.dart';
-import '../../data/datasources/buyer_mock_datasource.dart';
 import '../../data/datasources/buyer_remote_datasource.dart';
 import '../../data/repositories/buyer_repository_impl.dart';
 import '../../domain/repositories/buyer_repository.dart';
@@ -16,14 +15,11 @@ import '../bloc/buyer_bloc.dart';
 
 /// DI manual con Riverpod 3 (`Provider<T>`, sin codegen) para buyer.
 
-/// Datasource remoto según flags: mock (demo) → Firestore → API REST.
+/// Datasource remoto: Firestore (producción) o API REST propia.
 ///
-/// Sin autoDispose para que el estado en memoria (vistas, cache de
-/// vendedores) persista entre pantallas durante la sesión.
+/// Sin autoDispose para que el estado en memoria (cache de vendedores)
+/// persista entre pantallas durante la sesión.
 final buyerRemoteDatasourceProvider = Provider<BuyerRemoteDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return BuyerMockDatasource();
-  }
   if (AppConstants.useFirestore) {
     return BuyerFirestoreDatasource(
       ref.watch(firestoreServiceProvider),
@@ -33,9 +29,12 @@ final buyerRemoteDatasourceProvider = Provider<BuyerRemoteDatasource>((ref) {
   return BuyerRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });
 
-/// Repositorio del comprador.
+/// Repositorio del comprador (con caché offline de 30 min).
 final buyerRepositoryProvider = Provider<BuyerRepository>((ref) {
-  return BuyerRepositoryImpl(ref.watch(buyerRemoteDatasourceProvider));
+  return BuyerRepositoryImpl(
+    ref.watch(buyerRemoteDatasourceProvider),
+    cache: ref.watch(offlineCacheServiceProvider),
+  );
 });
 
 /// Caso de uso: buscar productos por texto/categoría/filtros.
@@ -70,6 +69,7 @@ final buyerBlocProvider = Provider.autoDispose<BuyerBloc>((ref) {
     getVendorDetail: ref.watch(getVendorDetailUsecaseProvider),
     reportPrice: ref.watch(reportPriceUsecaseProvider),
     getIndexByZone: ref.watch(getIndexByZoneUsecaseProvider),
+    activityLogger: ref.watch(activityLoggerProvider),
   );
   ref.onDispose(bloc.close);
   return bloc;
@@ -85,5 +85,6 @@ BuyerBloc createBuyerBloc(WidgetRef ref) {
     getVendorDetail: ref.read(getVendorDetailUsecaseProvider),
     reportPrice: ref.read(reportPriceUsecaseProvider),
     getIndexByZone: ref.read(getIndexByZoneUsecaseProvider),
+    activityLogger: ref.read(activityLoggerProvider),
   );
 }

@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../data/datasources/price_firestore_datasource.dart';
-import '../../data/datasources/price_mock_datasource.dart';
 import '../../data/datasources/price_remote_datasource.dart';
 import '../../data/repositories/price_repository_impl.dart';
 import '../../domain/repositories/price_repository.dart';
@@ -21,9 +20,6 @@ import '../bloc/price_bloc.dart';
 /// El mock vive aquí (provider sin autoDispose) para que las alertas
 /// en memoria persistan entre pantallas durante la sesión.
 final priceRemoteDatasourceProvider = Provider<PriceRemoteDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return PriceMockDatasource();
-  }
   if (AppConstants.useFirestore) {
     return PriceFirestoreDatasource(
       ref.watch(firestoreServiceProvider),
@@ -33,9 +29,12 @@ final priceRemoteDatasourceProvider = Provider<PriceRemoteDatasource>((ref) {
   return PriceRemoteDatasourceImpl(ref.watch(dioClientProvider));
 });
 
-/// Repositorio del índice de precios.
+/// Repositorio del índice de precios (con caché offline de 1 h).
 final priceRepositoryProvider = Provider<PriceRepository>((ref) {
-  return PriceRepositoryImpl(ref.watch(priceRemoteDatasourceProvider));
+  return PriceRepositoryImpl(
+    ref.watch(priceRemoteDatasourceProvider),
+    cache: ref.watch(offlineCacheServiceProvider),
+  );
 });
 
 /// Caso de uso: índice de la canasta básica por zona.

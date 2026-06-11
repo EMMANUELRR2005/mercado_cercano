@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/firebase/activity_logger.dart';
 import '../../domain/entities/rating_entity.dart';
 import '../../domain/entities/report_entity.dart';
 import '../../domain/usecases/get_vendor_ratings_usecase.dart';
@@ -17,6 +20,7 @@ class ReputationBloc extends Bloc<ReputationEvent, ReputationState> {
     required this._getVendorRatings,
     required this._submitRating,
     required this._reportFraud,
+    this._activityLogger,
   }) : super(const ReputationInitial()) {
     on<VendorRatingsRequested>(_onVendorRatingsRequested);
     on<RatingSubmitted>(_onRatingSubmitted);
@@ -26,6 +30,9 @@ class ReputationBloc extends Bloc<ReputationEvent, ReputationState> {
   final GetVendorRatingsUsecase _getVendorRatings;
   final SubmitRatingUsecase _submitRating;
   final ReportFraudUsecase _reportFraud;
+
+  /// Auditoría best-effort (calificaciones).
+  final ActivityLogger? _activityLogger;
 
   Future<void> _onVendorRatingsRequested(
     VendorRatingsRequested event,
@@ -60,6 +67,10 @@ class ReputationBloc extends Bloc<ReputationEvent, ReputationState> {
       return;
     }
     emit(RatingSubmitSuccess(rating!));
+    unawaited(_activityLogger?.log(
+      ActivityAction.ratingSubmitted,
+      metadata: {'vendorId': event.vendorId, 'stars': event.stars},
+    ));
   }
 
   Future<void> _onFraudReported(

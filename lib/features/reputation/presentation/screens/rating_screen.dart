@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/di/core_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../shared/widgets/star_rating.dart';
@@ -59,6 +60,7 @@ class _RatingScreenState extends ConsumerState<RatingScreen> {
         getVendorRatings: ref.read(getVendorRatingsUsecaseProvider),
         submitRating: ref.read(submitRatingUsecaseProvider),
         reportFraud: ref.read(reportFraudUsecaseProvider),
+        activityLogger: ref.read(activityLoggerProvider),
       ),
       child: BlocConsumer<ReputationBloc, ReputationState>(
         listener: (context, state) {

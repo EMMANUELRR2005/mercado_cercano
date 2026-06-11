@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_constants.dart';
 import '../../core/constants/route_names.dart';
+import '../../core/di/core_providers.dart';
+import '../../core/firebase/activity_logger.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
@@ -69,6 +73,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   Future<void> _onRoleChanged(UserRole newRole) async {
     final local = ref.read(authLocalDatasourceProvider);
     final isVendor = newRole == UserRole.vendor;
+
+    // Auditoría best-effort del cambio de rol.
+    unawaited(
+      ref.read(activityLoggerProvider).log(
+        ActivityAction.roleChanged,
+        metadata: {'newRole': newRole.name},
+      ),
+    );
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -146,7 +158,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       bloc: authBloc,
       listener: (context, state) {
         if (state is Unauthenticated) {
-          context.go(RouteNames.authPhonePath);
+          context.go(RouteNames.authLoginPath);
           return;
         }
         // Cambio de rol completado: redirigir al home del nuevo rol.
@@ -173,10 +185,66 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         builder: (context, state) {
           final role = _currentRole(state);
           final changing = state is AuthLoading && _pendingRole != null;
+          final user = state is Authenticated ? state.user : null;
           return Scaffold(
             appBar: AppBar(title: const Text('Configuración')),
             body: ListView(
               children: [
+                // --- Perfil: foto, nombre, email y método de acceso ---
+                if (user != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 20, 16, 4),
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 32,
+                          backgroundColor: AppColors.primaryGreenLight,
+                          foregroundImage: (user.photoUrl ?? '').isNotEmpty
+                              ? NetworkImage(user.photoUrl!)
+                              : null,
+                          child: Text(
+                            (user.name ?? user.email ?? '?')
+                                .substring(0, 1)
+                                .toUpperCase(),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                user.name ?? 'Usuario',
+                                style: AppTextStyles.titleLarge,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              if ((user.email ?? '').isNotEmpty)
+                                Text(
+                                  user.email!,
+                                  style: AppTextStyles.bodySmall.copyWith(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              const SizedBox(height: 6),
+                              _LoginMethodBadge(
+                                  method: user.loginMethod),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(),
+                ],
+
                 // --- Mi rol actual: ambos modos siempre visibles ---
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
@@ -278,6 +346,42 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Badge del método de acceso usado: Google / Apple / Email.
+class _LoginMethodBadge extends StatelessWidget {
+  const _LoginMethodBadge({this.method});
+
+  final String? method;
+
+  @override
+  Widget build(BuildContext context) {
+    final (label, icon) = switch (method) {
+      'google' => ('Google', Icons.g_mobiledata),
+      'apple' => ('Apple', Icons.apple),
+      'email' => ('Email', Icons.mail_outline),
+      _ => ('Cuenta', Icons.person_outline),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.primaryGreen.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 16, color: AppColors.primaryGreen),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: AppTextStyles.labelMedium
+                .copyWith(color: AppColors.primaryGreen),
+          ),
+        ],
       ),
     );
   }

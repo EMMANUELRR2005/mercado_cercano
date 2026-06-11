@@ -45,7 +45,10 @@ class _PriceIndexScreenState extends ConsumerState<PriceIndexScreen> {
       appBar: AppBar(title: const Text('Índice de precios')),
       body: Column(
         children: [
-          const OfflineBanner(),
+          // Al recuperar conexión se recarga el índice automáticamente.
+          OfflineBanner(
+            onReconnected: () => _bloc.add(const PriceIndexRequested()),
+          ),
           Expanded(
             child: BlocBuilder<PriceBloc, PriceState>(
               bloc: _bloc,

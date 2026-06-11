@@ -1,0 +1,43 @@
+rules_version = '2';
+
+// Reglas de Firebase Storage de MercadoCercano.
+//
+// NOTA: requiere plan Blaze (el bucket por defecto de Storage ya no se
+// puede crear en el plan Spark). Desplegar con:
+//   firebase deploy --only storage
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    // Imagen válida: máx 5 MB y solo JPEG/PNG/WebP.
+    function isValidImage() {
+      return request.resource.size <= 5 * 1024 * 1024
+        && request.resource.contentType.matches(
+             'image/(jpeg|png|webp)');
+    }
+
+    // Foto de perfil del negocio: solo el dueño sube a su carpeta.
+    match /vendors/{vendorId}/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && request.auth.uid == vendorId
+        && isValidImage();
+    }
+
+    // Fotos de productos: solo el vendedor dueño sube a su carpeta.
+    match /products/{vendorId}/{fileName} {
+      allow read: if signedIn();
+      allow write: if signedIn()
+        && request.auth.uid == vendorId
+        && isValidImage();
+    }
+
+    // Todo lo demás: denegado.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

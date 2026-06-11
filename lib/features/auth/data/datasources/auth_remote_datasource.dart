@@ -1,106 +1,46 @@
-import '../../../../core/errors/app_exception.dart';
-import '../../../../core/network/api_endpoints.dart';
-import '../../../../core/network/dio_client.dart';
 import '../../../../shared/domain/entities/user_entity.dart';
 import '../models/auth_response_model.dart';
 import '../models/user_model.dart';
 
 /// Contrato del datasource de autenticación.
 ///
-/// Lo implementan [AuthRemoteDatasourceImpl] (API real) y
-/// `AuthMockDatasource` (datos simulados, sin backend).
-/// Los métodos lanzan `DioException` / `AppException` ante errores;
-/// el BLoC los mapea a `Failure`.
+/// Métodos de acceso: Google Sign-In (principal), Apple Sign-In (iOS) y
+/// Email/Password (respaldo). Lo implementa `AuthFirebaseDatasource`.
+/// Los métodos lanzan `AppException` ante errores; el BLoC los mapea a
+/// `Failure` con mensajes en español.
 abstract class AuthRemoteDatasource {
-  /// `POST /auth/send-otp` con `{phone: "+502XXXXXXXX"}`.
-  Future<void> sendOtp(String phone);
+  /// Login con Google (método principal).
+  Future<AuthResponseModel> signInWithGoogle();
 
-  /// `POST /auth/verify-otp` con `{phone, otp, role?}`.
-  Future<AuthResponseModel> verifyOtp({
-    required String phone,
-    required String otp,
-    UserRole? role,
+  /// Login con Apple (solo iOS).
+  Future<AuthResponseModel> signInWithApple();
+
+  /// Registro con email y contraseña (envía email de verificación).
+  Future<AuthResponseModel> signUpWithEmail({
+    required String name,
+    required String email,
+    required String password,
   });
 
-  /// `POST /auth/refresh` con `{refreshToken}`.
-  Future<AuthResponseModel> refreshToken(String refreshToken);
+  /// Inicio de sesión con email y contraseña.
+  Future<AuthResponseModel> signInWithEmail({
+    required String email,
+    required String password,
+  });
 
-  /// Asigna el rol a un usuario recién registrado.
+  /// Envía el correo de restablecimiento de contraseña.
+  Future<void> sendPasswordReset(String email);
+
+  /// Asigna el rol a un usuario que aún no lo eligió.
   Future<UserModel> setRole(UserRole role);
 
-  /// `POST /auth/logout` (con Bearer).
+  /// Cierra la sesión (Firebase + proveedor social).
   Future<void> logout();
-}
 
-/// Implementación real contra la API de MercadoCercano.
-class AuthRemoteDatasourceImpl implements AuthRemoteDatasource {
-  AuthRemoteDatasourceImpl({required this._client});
+  /// Restaura la sesión persistida (silent refresh del ID token).
+  /// `null` = no hay sesión restaurable por esta vía.
+  Future<AuthResponseModel?> restoreSession();
 
-  final DioClient _client;
-
-  @override
-  Future<void> sendOtp(String phone) async {
-    await _client.post<Map<String, dynamic>>(
-      ApiEndpoints.sendOtp,
-      data: {'phone': phone},
-    );
-  }
-
-  @override
-  Future<AuthResponseModel> verifyOtp({
-    required String phone,
-    required String otp,
-    UserRole? role,
-  }) async {
-    final response = await _client.post<Map<String, dynamic>>(
-      ApiEndpoints.verifyOtp,
-      data: {
-        'phone': phone,
-        'otp': otp,
-        if (role != null) 'role': role.name,
-      },
-    );
-
-    final data = response.data;
-    if (data == null) {
-      throw const ServerException('Respuesta vacía en verify-otp');
-    }
-    return AuthResponseModel.fromJson(data);
-  }
-
-  @override
-  Future<AuthResponseModel> refreshToken(String refreshToken) async {
-    final response = await _client.post<Map<String, dynamic>>(
-      ApiEndpoints.refresh,
-      data: {'refreshToken': refreshToken},
-    );
-
-    final data = response.data;
-    if (data == null) {
-      throw const ServerException('Respuesta vacía en refresh');
-    }
-    return AuthResponseModel.fromJson(data);
-  }
-
-  @override
-  Future<UserModel> setRole(UserRole role) async {
-    // Endpoint de asignación de rol post-registro. No está en ApiEndpoints
-    // (el core es de solo lectura para este feature); cuando el backend
-    // exista debe exponer este path o moverse a ApiEndpoints.
-    final response = await _client.post<Map<String, dynamic>>(
-      '/auth/set-role',
-      data: {'role': role.name},
-    );
-
-    final data = response.data;
-    if (data == null) {
-      throw const ServerException('Respuesta vacía en set-role');
-    }
-    return UserModel.fromJson(data);
-  }
-
-  @override
-  Future<void> logout() async {
-    await _client.post<Map<String, dynamic>>(ApiEndpoints.logout);
-  }
+  /// `true` mientras la sesión siga activa (`authStateChanges`).
+  Stream<bool> watchSessionActive();
 }

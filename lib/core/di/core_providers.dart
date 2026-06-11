@@ -1,5 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../cache/offline_cache_service.dart';
+import '../firebase/activity_logger.dart';
+import '../firebase/firebase_storage_service.dart';
 import '../firebase/firestore_service.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
@@ -32,4 +35,23 @@ final networkInfoProvider = Provider<NetworkInfo>((ref) {
 /// feature lo consumen).
 final firestoreServiceProvider = Provider<FirestoreService>((ref) {
   return FirestoreService.instance;
+});
+
+/// Auditoría de acciones (colección `activity_logs`). Best-effort.
+final activityLoggerProvider = Provider<ActivityLogger>((ref) {
+  return ActivityLogger(
+    ref.watch(firestoreServiceProvider),
+    ref.watch(secureStorageProvider),
+  );
+});
+
+/// Subida de imágenes a Firebase Storage (con compresión automática).
+final firebaseStorageServiceProvider =
+    Provider<FirebaseStorageService>((ref) {
+  return FirebaseStorageService();
+});
+
+/// Caché offline (Hive) con TTL: productos 30 min, precios 1 h.
+final offlineCacheServiceProvider = Provider<OfflineCacheService>((ref) {
+  return OfflineCacheService();
 });

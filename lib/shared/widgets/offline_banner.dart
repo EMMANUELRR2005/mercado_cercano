@@ -9,11 +9,25 @@ import '../../core/theme/app_colors.dart';
 /// Escucha `networkInfoProvider.onConnectivityChanged` y se anima al
 /// aparecer/desaparecer. Colocar arriba del contenido (ej. en una
 /// Column dentro del Scaffold o como `appBar.bottom`).
-class OfflineBanner extends ConsumerWidget {
-  const OfflineBanner({super.key});
+///
+/// [onReconnected] se dispara UNA vez por reconexión (transición
+/// offline → online): las pantallas lo usan para refrescar sus datos
+/// automáticamente al recuperar internet.
+class OfflineBanner extends ConsumerStatefulWidget {
+  const OfflineBanner({super.key, this.onReconnected});
+
+  final VoidCallback? onReconnected;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<OfflineBanner> createState() => _OfflineBannerState();
+}
+
+class _OfflineBannerState extends ConsumerState<OfflineBanner> {
+  /// Última lectura de conectividad (asumimos online al arrancar).
+  bool _wasOnline = true;
+
+  @override
+  Widget build(BuildContext context) {
     final networkInfo = ref.watch(networkInfoProvider);
 
     return StreamBuilder<bool>(
@@ -23,6 +37,15 @@ class OfflineBanner extends ConsumerWidget {
       initialData: true,
       builder: (context, snapshot) {
         final isOnline = snapshot.data ?? true;
+
+        // Transición offline → online: refrescar datos automáticamente.
+        if (isOnline && !_wasOnline) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) widget.onReconnected?.call();
+          });
+        }
+        _wasOnline = isOnline;
+
         return AnimatedSize(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeInOut,

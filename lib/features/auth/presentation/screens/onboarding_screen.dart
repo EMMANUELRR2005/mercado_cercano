@@ -67,7 +67,7 @@ class _OnboardingScreenState extends ConsumerState<OnboardingScreen> {
     // Marca el onboarding como visto para no mostrarlo de nuevo.
     await ref.read(authLocalDatasourceProvider).setOnboardingComplete();
     if (!mounted) return;
-    context.goNamed(RouteNames.authPhone);
+    context.goNamed(RouteNames.authLogin);
   }
 
   void _next() {

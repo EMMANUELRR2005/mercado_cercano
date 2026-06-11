@@ -3,50 +3,32 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
 import '../../data/datasources/auth_firebase_datasource.dart';
 import '../../data/datasources/auth_local_datasource.dart';
-import '../../data/datasources/auth_mock_datasource.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
 import '../../data/repositories/auth_repository_impl.dart';
 import '../../domain/repositories/auth_repository.dart';
-import '../../domain/usecases/logout_usecase.dart';
-import '../../domain/usecases/refresh_token_usecase.dart';
-import '../../domain/usecases/send_otp_usecase.dart';
-import '../../domain/usecases/verify_otp_usecase.dart';
 import '../bloc/auth_bloc.dart';
 
 /// DI del feature de auth (Riverpod 3, `Provider<T>` manual).
 ///
-/// PARA EL AGENTE 7 (router):
-/// - `authBlocProvider` expone el [AuthBloc] (singleton con dispose).
-/// - `authRefreshListenableProvider` expone un [Listenable] que notifica
-///   en cada cambio de estado del bloc: pásalo como `refreshListenable`
-///   de GoRouter.
-/// - Callbacks síncronos para el redirect:
+/// Para el router:
+/// - `authRefreshListenableProvider` → `refreshListenable` de GoRouter.
+/// - Callbacks síncronos del redirect:
 ///   `getToken: () => bloc.isAuthenticated ? 'authenticated' : null`
 ///   `getRole:  () => bloc.currentRoleName`
-///   Nota: `currentRoleName` es `null` mientras un usuario nuevo no haya
-///   elegido rol → el redirect debe permitir `/auth/role` en ese caso.
+///   (`currentRoleName` es `null` mientras el usuario nuevo no elija rol
+///   → el redirect permite `/auth/role` en ese caso.)
 
-/// Almacenamiento local del feature (onboarding, teléfono).
+/// Almacenamiento local del feature (onboarding, flags de rol).
 final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
   return AuthLocalDatasource();
 });
 
-/// Datasource de auth según los flags de `AppConstants`:
-/// - `useMockData` → mock (demo sin backend, OTP 123456);
-/// - `useFirebaseAuth` → Firebase Auth teléfono/SMS + Firestore;
-/// - en otro caso → API REST propia (DioClient).
+/// Datasource de auth: Firebase (Google / Apple / Email-Password).
 final authRemoteDatasourceProvider = Provider<AuthRemoteDatasource>((ref) {
-  if (AppConstants.useMockData) {
-    return AuthMockDatasource();
-  }
-  if (AppConstants.useFirebaseAuth) {
-    return AuthFirebaseDatasource();
-  }
-  return AuthRemoteDatasourceImpl(client: ref.watch(dioClientProvider));
+  return AuthFirebaseDatasource();
 });
 
 /// Repositorio de autenticación.
@@ -54,35 +36,15 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepositoryImpl(
     datasource: ref.watch(authRemoteDatasourceProvider),
     secureStorage: ref.watch(secureStorageProvider),
-    localDatasource: ref.watch(authLocalDatasourceProvider),
+    local: ref.watch(authLocalDatasourceProvider),
   );
-});
-
-// --- Usecases ---
-
-final sendOtpUsecaseProvider = Provider<SendOtpUsecase>((ref) {
-  return SendOtpUsecase(ref.watch(authRepositoryProvider));
-});
-
-final verifyOtpUsecaseProvider = Provider<VerifyOtpUsecase>((ref) {
-  return VerifyOtpUsecase(ref.watch(authRepositoryProvider));
-});
-
-final refreshTokenUsecaseProvider = Provider<RefreshTokenUsecase>((ref) {
-  return RefreshTokenUsecase(ref.watch(authRepositoryProvider));
-});
-
-final logoutUsecaseProvider = Provider<LogoutUsecase>((ref) {
-  return LogoutUsecase(ref.watch(authRepositoryProvider));
 });
 
 /// BLoC de autenticación (instancia única, se cierra con el provider).
 final authBlocProvider = Provider<AuthBloc>((ref) {
   final bloc = AuthBloc(
-    sendOtp: ref.watch(sendOtpUsecaseProvider),
-    verifyOtp: ref.watch(verifyOtpUsecaseProvider),
-    logout: ref.watch(logoutUsecaseProvider),
     repository: ref.watch(authRepositoryProvider),
+    activityLogger: ref.watch(activityLoggerProvider),
   );
   ref.onDispose(bloc.close);
   return bloc;

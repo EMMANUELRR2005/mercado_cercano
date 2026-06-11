@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/firebase/activity_logger.dart';
 import '../../../../shared/domain/entities/price_entities.dart';
 import '../../../price_index/domain/usecases/get_index_by_zone_usecase.dart';
 import '../../domain/entities/search_filters.dart';
@@ -21,6 +22,7 @@ class BuyerBloc extends Bloc<BuyerEvent, BuyerState> {
     required this._getVendorDetail,
     required this._reportPrice,
     required this._getIndexByZone,
+    this._activityLogger,
   }) : super(const BuyerInitial()) {
     on<BuyerHomeRequested>(_onHomeRequested);
     on<BuyerSearchRequested>(_onSearchRequested);
@@ -34,6 +36,9 @@ class BuyerBloc extends Bloc<BuyerEvent, BuyerState> {
   final GetVendorDetailUsecase _getVendorDetail;
   final ReportPriceUsecase _reportPrice;
   final GetIndexByZoneUsecase _getIndexByZone;
+
+  /// Auditoría best-effort (reporte ciudadano de precios).
+  final ActivityLogger? _activityLogger;
 
   Future<void> _onHomeRequested(
     BuyerHomeRequested event,
@@ -141,5 +146,9 @@ class BuyerBloc extends Bloc<BuyerEvent, BuyerState> {
       return;
     }
     emit(const BuyerReportSuccess());
+    unawaited(_activityLogger?.log(
+      ActivityAction.priceReported,
+      metadata: {'productName': event.productName, 'price': event.price},
+    ));
   }
 }

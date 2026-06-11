@@ -5,12 +5,17 @@
 class AppConstants {
   AppConstants._();
 
+  /// Versión de la app (mantener en sync con pubspec.yaml).
+  static const String appVersion = '0.1.0';
+
   // --- API ---
   static const String baseUrl = 'https://api.mercadocercano.gt/v1';
   static const String wsUrl = 'ws://api.mercadocercano.gt/ws/map';
 
-  /// Flag global: si es true, toda la app usa mock data en vez del backend.
-  static const bool useMockData = true;
+  /// Flag global de demo. La app corre contra Firebase REAL: los mock
+  /// datasources fueron eliminados del proyecto; este flag solo lo
+  /// consulta infraestructura transversal (p. ej. ActivityLogger).
+  static const bool useMockData = false;
 
   /// Cuando `useMockData` es false, elige el backend de autenticación:
   /// `true` → Firebase Auth (teléfono/SMS) + Firestore;

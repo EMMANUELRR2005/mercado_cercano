@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/errors/error_handler.dart';
+import '../../../../core/firebase/activity_logger.dart';
 import '../../../../shared/domain/entities/product_entity.dart';
 import '../../domain/entities/product_draft.dart';
 import '../../domain/entities/vendor_stats_entity.dart';
@@ -36,6 +39,7 @@ class VendorProductsBloc
     required this._updateProduct,
     required this._markSoldOut,
     required this._renewAllProducts,
+    this._activityLogger,
   }) : super(const VendorProductsInitial()) {
     on<MyProductsRequested>(_onMyProductsRequested);
     on<MyProductsWatchStarted>(_onMyProductsWatchStarted);
@@ -52,6 +56,9 @@ class VendorProductsBloc
   final UpdateProductUsecase _updateProduct;
   final MarkSoldOutUsecase _markSoldOut;
   final RenewAllProductsUsecase _renewAllProducts;
+
+  /// Auditoría best-effort de las acciones del vendedor.
+  final ActivityLogger? _activityLogger;
 
   /// Lista actual si el estado la tiene; lista vacía en caso contrario.
   List<ProductEntity> get _currentProducts => switch (state) {
@@ -133,6 +140,10 @@ class VendorProductsBloc
         message: '¡Producto publicado!',
         createdProduct: created,
       ));
+      unawaited(_activityLogger?.log(
+        ActivityAction.productCreated,
+        metadata: {'productId': created.id, 'name': created.name},
+      ));
     } catch (e) {
       emit(VendorProductActionFailure(previous, message: _messageOf(e)));
     }
@@ -166,6 +177,10 @@ class VendorProductsBloc
       emit(VendorProductActionSuccess(
         _replace(previous, updated),
         message: 'Producto marcado como agotado',
+      ));
+      unawaited(_activityLogger?.log(
+        ActivityAction.productSoldOut,
+        metadata: {'productId': updated.id},
       ));
     } catch (e) {
       emit(VendorProductActionFailure(previous, message: _messageOf(e)));
@@ -210,6 +225,10 @@ class VendorProductsBloc
       emit(VendorProductActionSuccess(
         products,
         message: 'Todos tus productos fueron renovados por 24 horas más',
+      ));
+      unawaited(_activityLogger?.log(
+        ActivityAction.productRenewed,
+        metadata: {'count': products.length},
       ));
     } catch (e) {
       emit(VendorProductActionFailure(previous, message: _messageOf(e)));

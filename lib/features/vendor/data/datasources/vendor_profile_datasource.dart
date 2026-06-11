@@ -1,9 +1,9 @@
 import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import '../../../../core/errors/app_exception.dart';
+import '../../../../core/firebase/firebase_storage_service.dart';
 import '../../../../core/firebase/firestore_service.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../domain/entities/vendor_profile.dart';
@@ -14,45 +14,25 @@ abstract class VendorProfileDatasource {
   Future<VendorProfile?> getMyProfile();
 
   /// Guarda el perfil. Si [localPhotoPath] no es null, sube la foto
-  /// primero (en modo real va a Storage `vendors/{uid}/profile.jpg`).
+  /// primero a Storage (`vendors/{uid}/profile.jpg`, con compresión).
   Future<VendorProfile> saveProfile(
     VendorProfile profile, {
     String? localPhotoPath,
   });
 }
 
-/// Mock en memoria para el modo demo (`useMockData`): la "subida" de la
-/// foto conserva la ruta local del archivo elegido.
-class MockVendorProfileDatasource implements VendorProfileDatasource {
-  VendorProfile? _profile;
-
-  @override
-  Future<VendorProfile?> getMyProfile() async {
-    await Future<void>.delayed(const Duration(milliseconds: 300));
-    return _profile;
-  }
-
-  @override
-  Future<VendorProfile> saveProfile(
-    VendorProfile profile, {
-    String? localPhotoPath,
-  }) async {
-    await Future<void>.delayed(const Duration(milliseconds: 500));
-    _profile = profile.copyWith(
-      photoUrl: localPhotoPath ?? profile.photoUrl,
-      setupCompleted: true,
-    );
-    return _profile!;
-  }
-}
-
 /// Implementación real: Firestore (`vendors/{uid}`) + Firebase Storage
 /// para la foto del negocio.
 class FirestoreVendorProfileDatasource implements VendorProfileDatasource {
-  FirestoreVendorProfileDatasource(this._firestore, this._secureStorage);
+  FirestoreVendorProfileDatasource(
+    this._firestore,
+    this._secureStorage,
+    this._storage,
+  );
 
   final FirestoreService _firestore;
   final SecureStorageService _secureStorage;
+  final FirebaseStorageService _storage;
 
   static const _vendors = 'vendors';
 
@@ -89,18 +69,16 @@ class FirestoreVendorProfileDatasource implements VendorProfileDatasource {
   }) async {
     final uid = await _uid();
 
-    // Foto del negocio → Storage en `vendors/{uid}/profile.jpg`.
+    // Foto del negocio → Storage (comprimida). Degradación: si Storage
+    // no está disponible (plan Spark sin bucket), el perfil se guarda
+    // SIN foto en vez de romper el flujo de configuración.
     var photoUrl = profile.photoUrl;
     if (localPhotoPath != null) {
       try {
-        final ref =
-            FirebaseStorage.instance.ref('vendors/$uid/profile.jpg');
-        await ref.putFile(File(localPhotoPath));
-        photoUrl = await ref.getDownloadURL();
-      } on FirebaseException catch (e) {
-        throw ServerException(
-          'No se pudo subir la foto (${e.code}). Intenta de nuevo.',
-        );
+        photoUrl =
+            await _storage.uploadVendorPhoto(File(localPhotoPath), uid);
+      } on AppException {
+        photoUrl = profile.photoUrl;
       }
     }
 

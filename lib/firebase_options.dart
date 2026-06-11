@@ -56,13 +56,14 @@ class DefaultFirebaseOptions {
     projectId: 'mercado-cercano-28190',
     storageBucket: 'mercado-cercano-28190.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyAE95PTro1E0Zrs7aY8-PVt3Tyqmg0rK5g',
     appId: '1:427612490525:ios:9b551cb679f71546b4aff4',
     messagingSenderId: '427612490525',
     projectId: 'mercado-cercano-28190',
     storageBucket: 'mercado-cercano-28190.firebasestorage.app',
+    androidClientId: '427612490525-ug4jptp5pubbj4v1t14n1rsssbjq6708.apps.googleusercontent.com',
+    iosClientId: '427612490525-rbk8u8mrua12ripepc8qmj3e85d4b5vh.apps.googleusercontent.com',
     iosBundleId: 'com.example.mercadoCercano',
   );
 }
