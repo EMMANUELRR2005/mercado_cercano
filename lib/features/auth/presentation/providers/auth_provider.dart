@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/di/core_providers.dart';
+import '../../data/datasources/auth_firebase_datasource.dart';
 import '../../data/datasources/auth_local_datasource.dart';
 import '../../data/datasources/auth_mock_datasource.dart';
 import '../../data/datasources/auth_remote_datasource.dart';
@@ -34,10 +35,16 @@ final authLocalDatasourceProvider = Provider<AuthLocalDatasource>((ref) {
   return AuthLocalDatasource();
 });
 
-/// Datasource de auth: mock o API real según `AppConstants.useMockData`.
+/// Datasource de auth según los flags de `AppConstants`:
+/// - `useMockData` → mock (demo sin backend, OTP 123456);
+/// - `useFirebaseAuth` → Firebase Auth teléfono/SMS + Firestore;
+/// - en otro caso → API REST propia (DioClient).
 final authRemoteDatasourceProvider = Provider<AuthRemoteDatasource>((ref) {
   if (AppConstants.useMockData) {
     return AuthMockDatasource();
+  }
+  if (AppConstants.useFirebaseAuth) {
+    return AuthFirebaseDatasource();
   }
   return AuthRemoteDatasourceImpl(client: ref.watch(dioClientProvider));
 });

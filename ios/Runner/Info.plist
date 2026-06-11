@@ -28,10 +28,16 @@
 	<true/>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>MercadoCercano usa la cámara para tomar fotos de tus productos al publicarlos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>MercadoCercano accede a tus fotos para elegir imágenes de tus productos.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>MercadoCercano puede usar el micrófono al grabar videos de tus productos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

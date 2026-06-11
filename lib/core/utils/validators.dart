@@ -6,17 +6,21 @@ class Validators {
   Validators._();
 
   /// Valida un número de teléfono de Guatemala: exactamente 8 dígitos.
-  /// Típicamente los celulares GT empiezan con 3, 4, 5 o 7.
+  ///
+  /// Acepta también el formato con prefijo (+502 XXXXXXXX) por si el
+  /// usuario pega el número completo. No se restringe el primer dígito:
+  /// la numeración GT incluye fijos (2, 6, 7) y celulares (3, 4, 5).
   static String? validatePhoneGt(String? value) {
-    final phone = value?.replaceAll(RegExp(r'[\s-]'), '') ?? '';
+    var phone = value?.replaceAll(RegExp(r'[\s\-+]'), '') ?? '';
+    // Si pegaron el número con código de país (502XXXXXXXX), quitarlo.
+    if (phone.length == 11 && phone.startsWith('502')) {
+      phone = phone.substring(3);
+    }
     if (phone.isEmpty) {
       return 'Ingresa tu número de teléfono';
     }
     if (!RegExp(r'^\d{8}$').hasMatch(phone)) {
       return 'El número debe tener 8 dígitos';
-    }
-    if (!RegExp(r'^[3457]').hasMatch(phone)) {
-      return 'Ingresa un número de celular válido de Guatemala';
     }
     return null;
   }

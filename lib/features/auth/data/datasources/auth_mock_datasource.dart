@@ -124,7 +124,15 @@ class AuthMockDatasource implements AuthRemoteDatasource {
   // Helpers
   // -----------------------------------------------------------------------
 
-  String _digitsOf(String phone) => phone.replaceAll(RegExp(r'\D'), '');
+  /// Dígitos locales del número: descarta el código de país si viene
+  /// incluido (`+502XXXXXXXX` → `XXXXXXXX`). Sin esto, un número ya
+  /// normalizado contaba 11 dígitos y la validación de 8 fallaba.
+  String _digitsOf(String phone) {
+    final digits = phone.replaceAll(RegExp(r'\D'), '');
+    return digits.length == 11 && digits.startsWith('502')
+        ? digits.substring(3)
+        : digits;
+  }
 
   UserModel _buildMockUser(String digits, UserRole role) {
     return UserModel(

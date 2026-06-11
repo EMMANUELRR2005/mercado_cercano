@@ -7,7 +7,6 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_names.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/validators.dart';
 import '../bloc/auth_bloc.dart';
 import '../providers/auth_provider.dart';
 
@@ -34,18 +33,21 @@ class _PhoneInputScreenState extends ConsumerState<PhoneInputScreen> {
   }
 
   void _onChanged(String value) {
-    // Habilita el botón solo con un celular GT válido (8 dígitos).
+    // El campo solo captura los 8 dígitos locales (el +502 es decoración
+    // visual, nunca entra al controller). Botón activo con 8 dígitos.
     setState(() {
-      _isValid = Validators.validatePhoneGt(value) == null;
+      _isValid =
+          value.length == 8 && RegExp(r'^[0-9]+$').hasMatch(value);
     });
   }
 
   void _submit() {
     if (!_isValid) return;
     FocusScope.of(context).unfocus();
+    // Número completo E.164: prefijo de Guatemala + 8 dígitos locales.
     ref
         .read(authBlocProvider)
-        .add(SendOtpRequested(_controller.text.trim()));
+        .add(SendOtpRequested('+502${_controller.text.trim()}'));
   }
 
   @override

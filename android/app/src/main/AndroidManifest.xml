@@ -29,10 +29,10 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Google Maps API key — reemplazar con la key real de Google Cloud Console -->
+        <!-- Google Maps API key (proyecto mercado-cercano-28190) -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="YOUR_GOOGLE_MAPS_API_KEY"/>
+            android:value="AIzaSyD_B-PVASCES6e-UjHy-x50kWJCMRDcelI"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

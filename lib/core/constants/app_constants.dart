@@ -12,6 +12,23 @@ class AppConstants {
   /// Flag global: si es true, toda la app usa mock data en vez del backend.
   static const bool useMockData = true;
 
+  /// Cuando `useMockData` es false, elige el backend de autenticación:
+  /// `true` → Firebase Auth (teléfono/SMS) + Firestore;
+  /// `false` → API REST propia (DioClient).
+  static const bool useFirebaseAuth = true;
+
+  // --- Google Maps ---
+  /// API key de Google Maps (proyecto mercado-cercano-28190).
+  ///
+  /// Los SDKs nativos la leen de AndroidManifest.xml y AppDelegate.swift;
+  /// esta constante existe para usos desde Dart (Static Maps, Places, etc.)
+  /// y puede sobreescribirse en build con
+  /// `--dart-define=MAPS_API_KEY=...`.
+  static const String googleMapsApiKey = String.fromEnvironment(
+    'MAPS_API_KEY',
+    defaultValue: 'AIzaSyD_B-PVASCES6e-UjHy-x50kWJCMRDcelI',
+  );
+
   // --- Timeouts ---
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 20);
