@@ -16,6 +16,8 @@ class MapState {
     required this.vendors,
     required this.filters,
     required this.searchQuery,
+    this.searchLocation,
+    this.searchLocationLabel,
     this.selectedVendor,
     this.errorMessage,
   });
@@ -56,10 +58,21 @@ class MapState {
   /// Filtro de texto local (nombre del vendedor o producto destacado).
   final String searchQuery;
 
+  /// Ubicación de búsqueda elegida por el comprador (dirección buscada
+  /// o long-press en el mapa); null = buscar alrededor de [userLocation].
+  final LatLng? searchLocation;
+
+  /// Dirección legible de [searchLocation] para el chip informativo.
+  final String? searchLocationLabel;
+
   final VendorLocationEntity? selectedVendor;
 
   /// Mensaje de error user-friendly (de un [Failure]); null si no hay.
   final String? errorMessage;
+
+  /// Centro efectivo de búsqueda: la ubicación elegida o, si no hay,
+  /// la del comprador. El radio y las distancias se calculan desde aquí.
+  LatLng get searchCenter => searchLocation ?? userLocation;
 
   /// Vendedores visibles tras aplicar el filtro de texto local.
   List<VendorLocationEntity> get visibleVendors {
@@ -82,6 +95,8 @@ class MapState {
     List<VendorLocationEntity>? vendors,
     MapFiltersEntity? filters,
     String? searchQuery,
+    Object? searchLocation = _unset,
+    Object? searchLocationLabel = _unset,
     Object? selectedVendor = _unset,
     Object? errorMessage = _unset,
   }) {
@@ -93,6 +108,12 @@ class MapState {
       vendors: vendors ?? this.vendors,
       filters: filters ?? this.filters,
       searchQuery: searchQuery ?? this.searchQuery,
+      searchLocation: identical(searchLocation, _unset)
+          ? this.searchLocation
+          : searchLocation as LatLng?,
+      searchLocationLabel: identical(searchLocationLabel, _unset)
+          ? this.searchLocationLabel
+          : searchLocationLabel as String?,
       selectedVendor: identical(selectedVendor, _unset)
           ? this.selectedVendor
           : selectedVendor as VendorLocationEntity?,

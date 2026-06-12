@@ -94,9 +94,9 @@ class _MyCatalogScreenState extends ConsumerState<MyCatalogScreen> {
                         children: [
                           _ProductsTab(
                             products: _activeOf(products),
-                            emptyTitle: 'No tienes productos activos',
-                            emptySubtitle:
-                                'Publica algo para que los compradores te encuentren.',
+                            emptyTitle:
+                                'Aún no tienes productos publicados',
+                            emptySubtitle: '¡Publica tu primero!',
                             bloc: bloc,
                           ),
                           _ProductsTab(

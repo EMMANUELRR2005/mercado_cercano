@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -245,9 +244,8 @@ class _BuyerHomeScreenState extends ConsumerState<BuyerHomeScreen> {
           if (state.products.isEmpty)
             const EmptyStateWidget(
               icon: Icons.storefront_outlined,
-              title: 'Sin productos cerca',
-              subtitle:
-                  'Aún no hay publicaciones en tu zona. Vuelve pronto.',
+              title: 'Aún no hay productos cerca de ti',
+              subtitle: '¡Sé el primero en publicar!',
             )
           else ...[
             GridView.builder(
@@ -357,7 +355,7 @@ class _ProductGridCard extends StatelessWidget {
               child: Stack(
                 fit: StackFit.expand,
                 children: [
-                  CachedNetworkImage(
+                  AppImage(
                     imageUrl: product.photoUrl,
                     fit: BoxFit.cover,
                     placeholder: (_, _) => Container(

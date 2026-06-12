@@ -5,6 +5,7 @@ import '../../../../core/di/core_providers.dart';
 import '../../data/datasources/map_firestore_datasource.dart';
 import '../../data/datasources/map_remote_datasource.dart';
 import '../../data/datasources/map_websocket_datasource.dart';
+import '../../data/datasources/place_search_service.dart';
 import '../../data/datasources/user_location_service.dart';
 import '../../data/repositories/map_repository_impl.dart';
 import '../../domain/repositories/map_repository.dart';
@@ -49,6 +50,11 @@ final mapWebsocketDatasourceProvider = Provider<MapWebsocketDatasource>((ref) {
 /// memoria.
 final userLocationServiceProvider = Provider<UserLocationService>((ref) {
   return UserLocationServiceImpl();
+});
+
+/// Búsqueda de direcciones/lugares (geocoder nativo, sin API key).
+final placeSearchServiceProvider = Provider<PlaceSearchService>((ref) {
+  return PlaceSearchService();
 });
 
 /// Repositorio del mapa.

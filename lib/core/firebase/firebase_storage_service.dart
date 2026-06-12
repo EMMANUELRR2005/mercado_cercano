@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_storage/firebase_storage.dart';
@@ -6,12 +7,14 @@ import 'package:flutter_image_compress/flutter_image_compress.dart';
 
 import '../errors/app_exception.dart';
 
-/// Subida de imágenes a Firebase Storage con compresión automática.
+/// Guardado de imágenes con compresión automática.
 ///
-/// IMPORTANTE (plan de facturación): Cloud Storage para Firebase exige
-/// plan Blaze para crear el bucket por defecto. Mientras el proyecto
-/// siga en Spark, toda subida lanzará [ServerException]; los callers
-/// degradan con gracia (placeholder / sin foto) para no romper flujos.
+/// Intenta primero Firebase Storage; si el bucket no está disponible
+/// (plan Spark: Cloud Storage exige Blaze para crear el bucket por
+/// defecto), la imagen se guarda DENTRO de Firestore como data URI
+/// base64 (`data:image/jpeg;base64,…`) con compresión extra para
+/// respetar el límite de 1 MB por documento. Los data URIs se muestran
+/// en la app con `AppImage`/`appImageProvider`.
 class FirebaseStorageService {
   FirebaseStorageService({FirebaseStorage? storage})
       : _storage = storage ?? FirebaseStorage.instance;
@@ -21,6 +24,15 @@ class FirebaseStorageService {
   /// Compresión estándar de la app: máx 800 px de ancho, calidad 85.
   static const int _maxWidth = 800;
   static const int _quality = 85;
+
+  /// Compresión agresiva para imágenes embebidas en Firestore: el doc
+  /// completo debe quedar muy por debajo del límite de 1 MB.
+  static const int _embeddedMaxWidth = 480;
+  static const int _embeddedQuality = 60;
+
+  /// Tope del base64 embebido (~700 KB) para no acercarse al límite
+  /// de 1 MB por documento de Firestore.
+  static const int _maxEmbeddedChars = 700000;
 
   /// Foto de un producto → `products/{vendorId}/{timestamp}.jpg`.
   Future<String> uploadProductPhoto(File image, String vendorId) {
@@ -62,25 +74,47 @@ class FirebaseStorageService {
       return await ref.getDownloadURL();
     } on FirebaseException catch (e) {
       // 'object-not-found'/'no-default-bucket' aparece cuando el bucket
-      // aún no existe (plan Spark): el caller degrada con placeholder.
-      throw ServerException(
-        'No se pudo subir la foto (${e.code}). Intenta de nuevo.',
-      );
+      // aún no existe (plan Spark): la foto se guarda en Firestore.
+      if (kDebugMode) {
+        debugPrint('Storage no disponible (${e.code}): guardando en base64.');
+      }
+      return _encodeAsDataUri(image);
     }
   }
 
-  /// Comprime a JPEG (máx [_maxWidth] px de ancho, calidad [_quality]).
-  /// Si la compresión falla, sube el archivo original.
-  Future<File> _compress(File image) async {
+  /// Codifica la imagen como data URI base64 para guardarla dentro del
+  /// documento de Firestore (fallback sin Storage).
+  Future<String> _encodeAsDataUri(File image) async {
+    final compressed = await _compress(
+      image,
+      maxWidth: _embeddedMaxWidth,
+      quality: _embeddedQuality,
+    );
+    final encoded = base64Encode(await compressed.readAsBytes());
+    if (encoded.length > _maxEmbeddedChars) {
+      throw const ServerException(
+        'La foto es demasiado grande para guardarla. Intenta con otra.',
+      );
+    }
+    return 'data:image/jpeg;base64,$encoded';
+  }
+
+  /// Comprime a JPEG (máx [maxWidth] px de ancho, calidad [quality]).
+  /// Si la compresión falla, devuelve el archivo original.
+  Future<File> _compress(
+    File image, {
+    int maxWidth = _maxWidth,
+    int quality = _quality,
+  }) async {
     try {
       final targetPath =
           '${image.path}_c${DateTime.now().millisecondsSinceEpoch}.jpg';
       final result = await FlutterImageCompress.compressAndGetFile(
         image.absolute.path,
         targetPath,
-        minWidth: _maxWidth,
+        minWidth: maxWidth,
         minHeight: 1,
-        quality: _quality,
+        quality: quality,
         format: CompressFormat.jpeg,
       );
       return result != null ? File(result.path) : image;

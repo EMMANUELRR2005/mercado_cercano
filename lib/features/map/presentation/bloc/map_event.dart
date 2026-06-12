@@ -72,3 +72,22 @@ final class UserLocationChanged extends MapEvent {
 
   final LatLng location;
 }
+
+/// El comprador fijó una ubicación de búsqueda distinta a la suya
+/// (búsqueda de dirección o long-press en el mapa): el radio, las
+/// distancias y la carga de vendedores se centran ahí.
+final class SearchLocationSet extends MapEvent {
+  const SearchLocationSet(this.location, {this.label});
+
+  final LatLng location;
+
+  /// Dirección legible para mostrar en el chip (null mientras se
+  /// resuelve el reverse geocoding).
+  final String? label;
+}
+
+/// Se quitó la ubicación de búsqueda: todo vuelve a centrarse en la
+/// ubicación del comprador.
+final class SearchLocationCleared extends MapEvent {
+  const SearchLocationCleared();
+}

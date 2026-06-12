@@ -1,7 +1,6 @@
 /// Constantes globales de MercadoCercano.
 ///
-/// `useMockData` es el flag global: cuando es `true`, toda la app
-/// funciona con datos simulados (sin backend real).
+/// La app corre contra Firebase REAL (Auth, Firestore, Storage).
 class AppConstants {
   AppConstants._();
 
@@ -12,23 +11,17 @@ class AppConstants {
   static const String baseUrl = 'https://api.mercadocercano.gt/v1';
   static const String wsUrl = 'ws://api.mercadocercano.gt/ws/map';
 
-  /// Flag global de demo. La app corre contra Firebase REAL: los mock
-  /// datasources fueron eliminados del proyecto; este flag solo lo
-  /// consulta infraestructura transversal (p. ej. ActivityLogger).
-  static const bool useMockData = false;
-
-  /// Cuando `useMockData` es false, elige el backend de autenticación:
-  /// `true` → Firebase Auth (teléfono/SMS) + Firestore;
+  /// Backend de autenticación: `true` → Firebase Auth;
   /// `false` → API REST propia (DioClient).
   static const bool useFirebaseAuth = true;
 
-  /// Cuando `useMockData` es false, elige el backend de datos:
+  /// Backend de datos:
   /// `true` → Cloud Firestore (colecciones users/vendors/products/
   /// price_reports/ratings/price_alerts);
   /// `false` → API REST propia (DioClient).
   ///
-  /// OJO: las reglas de Firestore exigen usuario autenticado, así que
-  /// requiere haber habilitado Phone sign-in en la consola de Firebase.
+  /// Las reglas de Firestore exigen usuario autenticado (Google, Apple
+  /// o Email/Password habilitados en la consola).
   static const bool useFirestore = true;
 
   // --- Google Maps ---

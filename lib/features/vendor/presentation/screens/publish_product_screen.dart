@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
@@ -148,40 +147,17 @@ class _PublishProductScreenState extends ConsumerState<PublishProductScreen>
   double get _price =>
       double.tryParse(_priceController.text.replaceAll(',', '.')) ?? 0;
 
-  /// URL de la foto que "sube" el mock. Si hay foto local primero se
-  /// comprime (como haría la subida real); el backend simulado devuelve
-  /// una URL de picsum.
-  Future<String> _uploadPhoto() async {
-    final seed = DateTime.now().millisecondsSinceEpoch % 1000;
-    final placeholder = 'https://picsum.photos/seed/nuevo$seed/400/300';
-
-    final file = _photoFile;
-    if (file == null) return placeholder;
-
-    try {
-      // Comprimir ANTES de subir: ahorra datos móviles al vendedor.
-      await FlutterImageCompress.compressWithFile(
-        file.absolute.path,
-        minWidth: 800,
-        minHeight: 600,
-        quality: 70,
-      );
-    } catch (_) {
-      // Si la compresión falla (p. ej. en simulador), se "sube" igual.
-    }
-    return placeholder;
-  }
-
   Future<void> _publish() async {
-    final photoUrl = await _uploadPhoto();
-    if (!mounted) return;
     ref.read(vendorProductsBlocProvider).add(
           ProductCreated(
             ProductDraft(
               name: _name.trim(),
               price: _price,
               category: _category,
-              photoUrl: photoUrl,
+              // Ruta local del picker: el datasource la comprime y la
+              // guarda (Storage o base64 en Firestore) antes de crear
+              // el documento del producto.
+              photoUrl: _photoFile?.path ?? '',
               unit: _unit,
             ),
           ),

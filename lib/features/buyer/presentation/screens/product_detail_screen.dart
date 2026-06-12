@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -82,7 +81,7 @@ class _DetailContent extends StatelessWidget {
         // Foto grande con fallback al ícono de la categoría.
         AspectRatio(
           aspectRatio: 4 / 3,
-          child: CachedNetworkImage(
+          child: AppImage(
             imageUrl: product.photoUrl,
             fit: BoxFit.cover,
             placeholder: (_, _) => Container(

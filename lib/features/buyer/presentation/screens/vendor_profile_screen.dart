@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -111,9 +110,7 @@ class _ProfileContent extends StatelessWidget {
             CircleAvatar(
               radius: 36,
               backgroundColor: AppColors.primaryGreenLight,
-              foregroundImage: vendor.photoUrl != null
-                  ? CachedNetworkImageProvider(vendor.photoUrl!)
-                  : null,
+              foregroundImage: appImageProvider(vendor.photoUrl),
               child: Text(
                 vendor.name.isNotEmpty ? vendor.name[0].toUpperCase() : '?',
                 style: const TextStyle(

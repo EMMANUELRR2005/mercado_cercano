@@ -14,6 +14,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../features/auth/presentation/bloc/auth_bloc.dart';
 import '../../features/auth/presentation/providers/auth_provider.dart';
 import '../domain/entities/user_entity.dart';
+import '../widgets/app_image.dart';
 
 /// Configuración: rol actual (con cambio Comprador ⇄ Vendedor),
 /// privacidad y cierre de sesión.
@@ -199,9 +200,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         CircleAvatar(
                           radius: 32,
                           backgroundColor: AppColors.primaryGreenLight,
-                          foregroundImage: (user.photoUrl ?? '').isNotEmpty
-                              ? NetworkImage(user.photoUrl!)
-                              : null,
+                          foregroundImage: appImageProvider(user.photoUrl),
                           child: Text(
                             (user.name ?? user.email ?? '?')
                                 .substring(0, 1)
@@ -324,10 +323,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   title:
                       const Text('Acerca de', style: AppTextStyles.titleSmall),
-                  subtitle: Text(
-                    'MercadoCercano v1.0'
-                    '${AppConstants.useMockData ? ' · modo demo (datos de prueba)' : ''}',
-                  ),
+                  subtitle: Text('MercadoCercano v${AppConstants.appVersion}'),
                 ),
                 const Divider(),
                 ListTile(

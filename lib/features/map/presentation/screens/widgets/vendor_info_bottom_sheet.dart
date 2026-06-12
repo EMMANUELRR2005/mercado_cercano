@@ -93,9 +93,7 @@ class VendorInfoBottomSheet extends StatelessWidget {
                   radius: 28,
                   backgroundColor:
                       vendor.category.pinColor.withValues(alpha: 0.15),
-                  foregroundImage: vendor.photoUrl != null
-                      ? NetworkImage(vendor.photoUrl!)
-                      : null,
+                  foregroundImage: appImageProvider(vendor.photoUrl),
                   child: Text(
                     vendor.name.isNotEmpty
                         ? vendor.name[0].toUpperCase()

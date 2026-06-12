@@ -13,6 +13,7 @@ class MapSearchBar extends StatelessWidget {
     required this.selectedCategory,
     required this.onQueryChanged,
     required this.onCategoryChanged,
+    this.onLocationSearchTap,
   });
 
   final String query;
@@ -21,6 +22,9 @@ class MapSearchBar extends StatelessWidget {
 
   /// Recibe null cuando se selecciona "Todas".
   final ValueChanged<ProductCategory?> onCategoryChanged;
+
+  /// Abre la búsqueda de direcciones para buscar en otra ubicación.
+  final VoidCallback? onLocationSearchTap;
 
   @override
   Widget build(BuildContext context) {
@@ -42,6 +46,16 @@ class MapSearchBar extends StatelessWidget {
                 Icons.search,
                 color: AppColors.textSecondary,
               ),
+              suffixIcon: onLocationSearchTap == null
+                  ? null
+                  : IconButton(
+                      tooltip: 'Buscar en otra ubicación',
+                      icon: const Icon(
+                        Icons.add_location_alt_outlined,
+                        color: AppColors.primaryGreen,
+                      ),
+                      onPressed: onLocationSearchTap,
+                    ),
               border: InputBorder.none,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 20,

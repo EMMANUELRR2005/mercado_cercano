@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
-import '../constants/app_constants.dart';
 import '../storage/secure_storage.dart';
 import 'firestore_service.dart';
 
@@ -23,8 +22,7 @@ enum ActivityAction {
 /// Registro de actividad en Firestore para auditoría.
 ///
 /// Best-effort SIEMPRE: un fallo del log jamás interrumpe la acción del
-/// usuario (se traga el error y solo se imprime en debug). En modo demo
-/// (`useMockData`) no escribe nada.
+/// usuario (se traga el error y solo se imprime en debug).
 class ActivityLogger {
   ActivityLogger(this._firestore, this._secureStorage);
 
@@ -37,7 +35,6 @@ class ActivityLogger {
     ActivityAction action, {
     Map<String, dynamic> metadata = const {},
   }) async {
-    if (AppConstants.useMockData) return;
     try {
       final userId = await _secureStorage.getUserId();
       if (userId == null || userId.isEmpty) return;

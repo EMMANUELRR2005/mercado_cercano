@@ -32,17 +32,22 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
   static const _products = 'products';
   static const _vendors = 'vendors';
 
-  /// Sube la foto a Storage si [photoUrl] es una ruta local del picker.
+  /// Guarda la foto si [photoUrl] es una ruta local del picker: sube a
+  /// Storage o, sin bucket (plan Spark), la embebe en Firestore como
+  /// data URI base64.
   ///
-  /// Degradación: sin bucket (plan Spark) o sin red, la publicación NO
-  /// se bloquea — se usa un placeholder y se sigue.
+  /// Degradación: si ni eso es posible, la publicación NO se bloquea —
+  /// el producto se guarda sin foto.
   Future<String> _resolvePhotoUrl(String photoUrl, String uid) async {
-    if (photoUrl.isEmpty || photoUrl.startsWith('http')) return photoUrl;
+    if (photoUrl.isEmpty ||
+        photoUrl.startsWith('http') ||
+        photoUrl.startsWith('data:')) {
+      return photoUrl;
+    }
     try {
       return await _storage.uploadProductPhoto(File(photoUrl), uid);
     } on AppException {
-      // Storage no disponible: placeholder estable por vendedor.
-      return 'https://picsum.photos/seed/$uid${DateTime.now().millisecondsSinceEpoch % 97}/400/300';
+      return '';
     }
   }
 

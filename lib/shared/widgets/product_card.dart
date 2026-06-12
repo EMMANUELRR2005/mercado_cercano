@@ -1,10 +1,10 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/formatters.dart';
 import '../domain/entities/product_entity.dart';
+import 'app_image.dart';
 import 'price_tag.dart';
 
 /// Tarjeta de producto para listas y grillas del comprador.
@@ -96,7 +96,7 @@ class ProductCard extends StatelessWidget {
       children: [
         AspectRatio(
           aspectRatio: 16 / 10,
-          child: CachedNetworkImage(
+          child: AppImage(
             imageUrl: product.photoUrl,
             fit: BoxFit.cover,
             placeholder: (context, url) => _CategoryPlaceholder(

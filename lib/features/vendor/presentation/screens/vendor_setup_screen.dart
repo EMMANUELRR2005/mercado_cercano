@@ -1,7 +1,5 @@
 import 'dart:async';
-import 'dart:io';
 
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
@@ -19,6 +17,7 @@ import '../../../../core/errors/error_handler.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/validators.dart';
+import '../../../../shared/widgets/app_image.dart';
 import '../../domain/entities/vendor_profile.dart';
 import '../providers/vendor_provider.dart';
 
@@ -462,16 +461,9 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
     );
   }
 
-  /// Foto elegida (archivo local) o ya guardada (URL/ruta del demo).
-  ImageProvider? _photoProvider() {
-    final path = _pickedPhotoPath;
-    if (path != null) return FileImage(File(path));
-    final url = _existingPhotoUrl;
-    if (url == null || url.isEmpty) return null;
-    return url.startsWith('http')
-        ? CachedNetworkImageProvider(url)
-        : FileImage(File(url));
-  }
+  /// Foto elegida (archivo local) o ya guardada (URL/base64/ruta local).
+  ImageProvider? _photoProvider() =>
+      appImageProvider(_pickedPhotoPath ?? _existingPhotoUrl);
 }
 
 /// Mini mapa de pantalla completa con pin arrastrable; devuelve la

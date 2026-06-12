@@ -1,6 +1,3 @@
-import 'dart:io';
-
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -56,14 +53,8 @@ class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
     }
   }
 
-  /// Avatar del negocio: URL de Storage o ruta local (modo demo).
-  ImageProvider? _photoProvider() {
-    final url = _profile?.photoUrl;
-    if (url == null || url.isEmpty) return null;
-    return url.startsWith('http')
-        ? CachedNetworkImageProvider(url)
-        : FileImage(File(url));
-  }
+  /// Avatar del negocio: URL de Storage, base64 (Firestore) o ruta local.
+  ImageProvider? _photoProvider() => appImageProvider(_profile?.photoUrl);
 
   Future<void> _editProfile() async {
     await context.pushNamed(RouteNames.vendorSetup);
@@ -469,7 +460,7 @@ class _ProductRow extends StatelessWidget {
                 child: SizedBox(
                   width: 56,
                   height: 56,
-                  child: CachedNetworkImage(
+                  child: AppImage(
                     imageUrl: product.photoUrl,
                     fit: BoxFit.cover,
                     placeholder: (_, _) => _imageFallback(),

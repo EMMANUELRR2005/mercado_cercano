@@ -15,10 +15,7 @@ import '../bloc/price_bloc.dart';
 
 /// DI manual con Riverpod 3 (`Provider<T>`, sin codegen) para price_index.
 
-/// Datasource remoto: mock o real según `AppConstants.useMockData`.
-///
-/// El mock vive aquí (provider sin autoDispose) para que las alertas
-/// en memoria persistan entre pantallas durante la sesión.
+/// Datasource remoto: Firestore (producción) o API REST propia.
 final priceRemoteDatasourceProvider = Provider<PriceRemoteDatasource>((ref) {
   if (AppConstants.useFirestore) {
     return PriceFirestoreDatasource(

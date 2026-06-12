@@ -61,6 +61,8 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     on<CategoryFilterChanged>(_onCategoryFilterChanged);
     on<VerifiedFilterChanged>(_onVerifiedFilterChanged);
     on<SearchQueryChanged>(_onSearchQueryChanged);
+    on<SearchLocationSet>(_onSearchLocationSet);
+    on<SearchLocationCleared>(_onSearchLocationCleared);
     on<VendorSelected>(_onVendorSelected);
     on<VendorDeselected>(_onVendorDeselected);
     on<RealtimeEventReceived>(_onRealtimeEventReceived);
@@ -115,7 +117,8 @@ class MapBloc extends Bloc<MapEvent, MapState> {
   }
 
   /// El comprador se movió: recalcular distancias y re-ordenar por
-  /// cercanía SIN recargar del backend.
+  /// cercanía SIN recargar del backend. Si hay una ubicación de
+  /// búsqueda fija, las distancias siguen relativas a ella.
   void _onUserLocationChanged(
     UserLocationChanged event,
     Emitter<MapState> emit,
@@ -123,13 +126,50 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     emit(
       state.copyWith(
         userLocation: event.location,
-        vendors: _withDistancesFrom(event.location, state.vendors),
+        vendors: state.searchLocation == null
+            ? _withDistancesFrom(event.location, state.vendors)
+            : state.vendors,
       ),
     );
   }
 
-  /// Distancias desde la ubicación REAL del comprador (no desde el
-  /// centro de la cámara) + orden por cercanía.
+  /// Nueva ubicación de búsqueda (dirección buscada o long-press):
+  /// recentra radio y distancias, y recarga vendedores alrededor.
+  /// Si solo cambió la etiqueta (reverse geocoding tardío) no recarga.
+  Future<void> _onSearchLocationSet(
+    SearchLocationSet event,
+    Emitter<MapState> emit,
+  ) async {
+    final sameCenter = state.searchLocation == event.location;
+    emit(
+      state.copyWith(
+        searchLocation: event.location,
+        searchLocationLabel: event.label,
+        mapCenter: event.location,
+        vendors: _withDistancesFrom(event.location, state.vendors),
+      ),
+    );
+    if (!sameCenter) await _loadVendors(emit, center: event.location);
+  }
+
+  /// Quita la ubicación de búsqueda: vuelve a la ubicación del comprador.
+  Future<void> _onSearchLocationCleared(
+    SearchLocationCleared event,
+    Emitter<MapState> emit,
+  ) async {
+    emit(
+      state.copyWith(
+        searchLocation: null,
+        searchLocationLabel: null,
+        mapCenter: state.userLocation,
+        vendors: _withDistancesFrom(state.userLocation, state.vendors),
+      ),
+    );
+    await _loadVendors(emit, center: state.userLocation);
+  }
+
+  /// Distancias desde el centro de búsqueda (ubicación del comprador o
+  /// la elegida, no el centro de la cámara) + orden por cercanía.
   List<VendorLocationEntity> _withDistancesFrom(
     LatLng origin,
     List<VendorLocationEntity> vendors,
@@ -234,10 +274,10 @@ class MapBloc extends Bloc<MapEvent, MapState> {
     }
     if (filters.onlyVerified && !vendor.vendor.isVerified) return;
 
-    // Distancia desde la ubicación del comprador (solo memoria).
+    // Distancia desde el centro de búsqueda activo (solo memoria).
     final distance = Geolocator.distanceBetween(
-      state.userLocation.latitude,
-      state.userLocation.longitude,
+      state.searchCenter.latitude,
+      state.searchCenter.longitude,
       vendor.latitude,
       vendor.longitude,
     );
@@ -278,9 +318,10 @@ class MapBloc extends Bloc<MapEvent, MapState> {
       emit(
         state.copyWith(
           status: MapStatus.ready,
-          // Distancias y orden siempre relativos al COMPRADOR, aunque la
-          // recarga haya sido por mover la cámara.
-          vendors: _withDistancesFrom(state.userLocation, vendors),
+          // Distancias y orden siempre relativos al centro de búsqueda
+          // (comprador o ubicación elegida), aunque la recarga haya
+          // sido por mover la cámara.
+          vendors: _withDistancesFrom(state.searchCenter, vendors),
           errorMessage: null,
         ),
       );

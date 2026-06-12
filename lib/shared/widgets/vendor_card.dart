@@ -1,4 +1,3 @@
-import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
@@ -6,6 +5,7 @@ import '../../core/theme/app_text_styles.dart';
 import '../../core/utils/formatters.dart';
 import '../domain/entities/product_entity.dart';
 import '../domain/entities/vendor_entity.dart';
+import 'app_image.dart';
 import 'star_rating.dart';
 import 'verified_badge.dart';
 
@@ -116,8 +116,7 @@ class _Avatar extends StatelessWidget {
     return CircleAvatar(
       radius: 26,
       backgroundColor: AppColors.primaryGreen.withValues(alpha: 0.12),
-      foregroundImage:
-          hasPhoto ? CachedNetworkImageProvider(vendor.photoUrl!) : null,
+      foregroundImage: hasPhoto ? appImageProvider(vendor.photoUrl) : null,
       // Si la foto falla en cargar, queda la inicial de fondo.
       onForegroundImageError: hasPhoto ? (_, _) {} : null,
       child: Text(

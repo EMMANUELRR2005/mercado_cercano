@@ -11,6 +11,7 @@ import '../../../../shared/widgets/widgets.dart';
 import '../../data/models/map_bounds_model.dart';
 import '../bloc/map_bloc.dart';
 import '../providers/map_provider.dart';
+import 'widgets/location_search_sheet.dart';
 import 'widgets/map_search_bar.dart';
 import 'widgets/radius_slider.dart';
 import 'widgets/vendor_info_bottom_sheet.dart';
@@ -76,6 +77,28 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     );
   }
 
+  /// Abre la búsqueda de direcciones; al elegir un lugar lo fija como
+  /// centro de búsqueda y lleva la cámara ahí.
+  Future<void> _openLocationSearch(MapBloc bloc) async {
+    final result = await LocationSearchSheet.show(context);
+    if (result == null || !mounted) return;
+    bloc.add(SearchLocationSet(result.position, label: result.label));
+    _mapController?.animateCamera(
+      CameraUpdate.newLatLngZoom(result.position, 15),
+    );
+  }
+
+  /// Long-press en el mapa: fija ese punto como centro de búsqueda y
+  /// resuelve su dirección (best-effort) para el chip.
+  Future<void> _setSearchLocation(MapBloc bloc, LatLng position) async {
+    bloc.add(SearchLocationSet(position));
+    final label =
+        await ref.read(placeSearchServiceProvider).describe(position);
+    if (label != null && mounted && !bloc.isClosed) {
+      bloc.add(SearchLocationSet(position, label: label));
+    }
+  }
+
   /// Diálogo cuando el permiso de ubicación fue denegado o el GPS está
   /// apagado: explica el porqué y ofrece abrir la configuración o seguir
   /// con Ciudad de Guatemala como ubicación por defecto.
@@ -129,6 +152,20 @@ class _MapScreenState extends ConsumerState<MapScreen> {
   Set<Marker> _buildMarkers(BuildContext context, MapState state) {
     final bloc = context.read<MapBloc>();
     return {
+      // Pin violeta de la ubicación de búsqueda elegida (arrastrable).
+      if (state.searchLocation != null)
+        Marker(
+          markerId: const MarkerId('search_location'),
+          position: state.searchLocation!,
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueViolet,
+          ),
+          draggable: true,
+          onDragEnd: (position) => _setSearchLocation(bloc, position),
+          infoWindow: InfoWindow(
+            title: state.searchLocationLabel ?? 'Ubicación de búsqueda',
+          ),
+        ),
       for (final vendorLocation in state.visibleVendors)
         Marker(
           markerId: MarkerId(vendorLocation.vendor.id),
@@ -154,12 +191,13 @@ class _MapScreenState extends ConsumerState<MapScreen> {
     };
   }
 
-  /// Círculo del radio de búsqueda centrado en el comprador.
+  /// Círculo del radio de búsqueda centrado en el centro activo
+  /// (la ubicación del comprador o la ubicación de búsqueda elegida).
   Set<Circle> _buildRadiusCircle(MapState state) {
     return {
       Circle(
         circleId: const CircleId('search_radius'),
-        center: state.userLocation,
+        center: state.searchCenter,
         radius: state.filters.radiusKm * 1000,
         fillColor: AppColors.primaryGreen.withValues(alpha: 0.1),
         strokeColor: AppColors.primaryGreen.withValues(alpha: 0.35),
@@ -235,6 +273,9 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   circles: _buildRadiusCircle(state),
                   onMapCreated: (controller) => _mapController = controller,
                   onCameraIdle: () => _onCameraIdle(bloc),
+                  // Long-press: buscar alrededor de ese punto.
+                  onLongPress: (position) =>
+                      _setSearchLocation(bloc, position),
                 ),
 
                 // --- Búsqueda + filtros flotantes ---
@@ -251,7 +292,19 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                               bloc.add(SearchQueryChanged(query)),
                           onCategoryChanged: (category) =>
                               bloc.add(CategoryFilterChanged(category)),
+                          onLocationSearchTap: () =>
+                              _openLocationSearch(bloc),
                         ),
+                        if (state.searchLocation != null) ...[
+                          const SizedBox(height: 8),
+                          _SearchLocationChip(
+                            label: state.searchLocationLabel,
+                            onClear: () {
+                              bloc.add(const SearchLocationCleared());
+                              _centerOnUser(state);
+                            },
+                          ),
+                        ],
                         if (state.locationDenied) ...[
                           const SizedBox(height: 8),
                           const _LocationDeniedChip(),
@@ -310,6 +363,56 @@ class _MapScreenState extends ConsumerState<MapScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Chip de la ubicación de búsqueda activa: muestra dónde se está
+/// buscando y permite volver a la ubicación del comprador con la X.
+class _SearchLocationChip extends StatelessWidget {
+  const _SearchLocationChip({required this.label, required this.onClear});
+
+  /// Dirección legible; null mientras el reverse geocoding resuelve.
+  final String? label;
+
+  final VoidCallback onClear;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceWhite,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.only(left: 12, top: 4, bottom: 4),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.place,
+              size: 16,
+              color: AppColors.primaryGreen,
+            ),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                'Buscando en: ${label ?? 'ubicación marcada'}',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelMedium.copyWith(
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ),
+            IconButton(
+              tooltip: 'Volver a mi ubicación',
+              visualDensity: VisualDensity.compact,
+              icon: const Icon(Icons.close, size: 16),
+              onPressed: onClear,
+            ),
+          ],
+        ),
       ),
     );
   }

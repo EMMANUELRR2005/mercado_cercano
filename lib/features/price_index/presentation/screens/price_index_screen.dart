@@ -140,10 +140,14 @@ class _PriceIndexScreenState extends ConsumerState<PriceIndexScreen> {
           ),
           const SizedBox(height: 12),
           if (filtered.isEmpty)
-            const EmptyStateWidget(
+            EmptyStateWidget(
               icon: Icons.price_check,
-              title: 'Sin resultados',
-              subtitle: 'No hay reportes para ese producto en tu zona.',
+              title: indices.isEmpty
+                  ? 'Aún no hay reportes de precios en tu zona'
+                  : 'Sin resultados',
+              subtitle: indices.isEmpty
+                  ? 'Reporta el primer precio y ayuda a tu comunidad.'
+                  : 'No hay reportes para ese producto en tu zona.',
             )
           else
             ...filtered.map(

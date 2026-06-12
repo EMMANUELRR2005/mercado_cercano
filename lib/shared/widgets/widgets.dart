@@ -2,6 +2,7 @@
 library;
 
 export 'app_bottom_nav.dart';
+export 'app_image.dart';
 export 'category_chip.dart';
 export 'empty_state_widget.dart';
 export 'error_state_widget.dart';
