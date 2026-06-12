@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../shared/domain/entities/product_entity.dart';
 import '../../../../shared/widgets/widgets.dart';
 import '../../domain/entities/vendor_stats_entity.dart';
 import '../bloc/vendor_bloc.dart';
@@ -66,11 +67,95 @@ class _StatsContent extends StatelessWidget {
 
   final VendorStatsEntity stats;
 
+  /// Productos vigentes (disponibles y no vencidos).
+  List<ProductEntity> get _activeProducts {
+    final now = DateTime.now();
+    return stats.topProducts
+        .where((p) => p.isAvailable && p.expiresAt.isAfter(now))
+        .toList();
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Con publicaciones de 24 h, las vistas de los productos ACTIVOS
+    // son las vistas "de hoy".
+    final viewsToday =
+        _activeProducts.fold<int>(0, (total, p) => total + p.viewCount);
+    final mostViewed =
+        stats.topProducts.isNotEmpty ? stats.topProducts.first : null;
+
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
+        // --- Resumen de hoy ---
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.visibility_outlined,
+                          color: AppColors.primaryGreen, size: 20),
+                      const SizedBox(height: 8),
+                      Text(
+                        '$viewsToday',
+                        style: AppTextStyles.headlineLarge.copyWith(
+                          color: AppColors.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Vistas hoy',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(Icons.local_fire_department,
+                          color: AppColors.accentAmber, size: 20),
+                      const SizedBox(height: 8),
+                      Text(
+                        mostViewed?.name ?? 'Sin productos',
+                        style: AppTextStyles.titleSmall,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        mostViewed != null
+                            ? '${mostViewed.viewCount} vistas · '
+                                'Producto más visto'
+                            : 'Producto más visto',
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textSecondary),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
         // --- Métricas principales ---
         Row(
           children: [
@@ -151,7 +236,7 @@ class _StatsContent extends StatelessWidget {
         ),
         const SizedBox(height: 24),
 
-        // --- Top productos ---
+        // --- Productos ordenados por vistas ---
         const Text('Tus productos más vistos',
             style: AppTextStyles.titleLarge),
         const SizedBox(height: 8),
@@ -162,38 +247,102 @@ class _StatsContent extends StatelessWidget {
             subtitle: 'Publica productos para empezar a medir.',
           )
         else
-          ...stats.topProducts.take(3).toList().asMap().entries.map(
-                (entry) => Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: AppColors.primaryGreenLight,
-                      child: Text(
-                        '${entry.key + 1}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    title: Text(
-                      entry.value.name,
-                      style: AppTextStyles.titleSmall,
-                    ),
-                    subtitle: Text(
-                      '${entry.value.viewCount} vistas · '
-                      '${entry.value.clickCount} clics',
-                      style: AppTextStyles.bodySmall,
-                    ),
-                    trailing: PriceTag(
-                      price: entry.value.price,
-                      size: PriceTagSize.small,
+          ...stats.topProducts.map(
+            (product) => _ProductViewsRow(
+              product: product,
+              // Barra proporcional al producto más visto.
+              maxViews: stats.topProducts.first.viewCount,
+            ),
+          ),
+        const SizedBox(height: 16),
+      ],
+    );
+  }
+}
+
+/// Fila de producto en el ranking de vistas: foto pequeña, nombre,
+/// precio, barra proporcional al más visto y número de vistas.
+class _ProductViewsRow extends StatelessWidget {
+  const _ProductViewsRow({required this.product, required this.maxViews});
+
+  final ProductEntity product;
+  final int maxViews;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: SizedBox(
+                width: 40,
+                height: 40,
+                child: AppImage(
+                  imageUrl: product.photoUrl,
+                  fit: BoxFit.cover,
+                  errorWidget: (_, _, _) => Container(
+                    color: AppColors.divider,
+                    child: Icon(
+                      product.category.icon,
+                      size: 20,
+                      color: AppColors.textHint,
                     ),
                   ),
                 ),
               ),
-        const SizedBox(height: 16),
-      ],
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          product.name,
+                          style: AppTextStyles.titleSmall,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      PriceTag(price: product.price, size: PriceTagSize.small),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(3),
+                    child: LinearProgressIndicator(
+                      value: maxViews > 0
+                          ? product.viewCount / maxViews
+                          : 0,
+                      minHeight: 6,
+                      backgroundColor: AppColors.divider,
+                      color: AppColors.primaryGreen,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              children: [
+                const Icon(
+                  Icons.visibility_outlined,
+                  size: 16,
+                  color: AppColors.textSecondary,
+                ),
+                Text('${product.viewCount}', style: AppTextStyles.bodySmall),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

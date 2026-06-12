@@ -247,7 +247,9 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
       activeProducts: active,
       soldOutProducts: soldOut,
       viewsByDay: viewsByDay,
-      topProducts: top.take(3).toList(),
+      // Lista COMPLETA ordenada por vistas: la pantalla de stats la
+      // muestra entera (con barra proporcional al más visto).
+      topProducts: top,
       averageRating:
           ((vendorDoc?['rating'] as num?) ?? 0).toDouble(),
     );

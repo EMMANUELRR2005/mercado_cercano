@@ -28,9 +28,14 @@ class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
   /// Perfil del negocio para el header (foto, nombre, zona).
   VendorProfile? _profile;
 
+  /// Catálogo en TIEMPO REAL para el resumen del header
+  /// ("Hoy: X vistas · Y productos activos").
+  late final Stream<List<ProductEntity>> _myProductsStream;
+
   @override
   void initState() {
     super.initState();
+    _myProductsStream = ref.read(watchMyProductsUsecaseProvider)();
     // Carga inicial de productos y métricas (el mock responde en 500 ms).
     final productsBloc = ref.read(vendorProductsBlocProvider);
     if (productsBloc.state is VendorProductsInitial) {
@@ -107,15 +112,33 @@ class _VendorHomeScreenState extends ConsumerState<VendorHomeScreen> {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
-                  if ((_profile?.neighborhood ?? '').isNotEmpty)
-                    Text(
-                      _profile!.neighborhood!,
-                      style: AppTextStyles.bodySmall.copyWith(
-                        color: Colors.white.withValues(alpha: 0.85),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                  // Resumen del día en VIVO: cada vista o publicación
+                  // nueva re-emite el stream y actualiza el texto.
+                  StreamBuilder<List<ProductEntity>>(
+                    stream: _myProductsStream,
+                    builder: (context, snapshot) {
+                      final products =
+                          snapshot.data ?? const <ProductEntity>[];
+                      final now = DateTime.now();
+                      final active = products
+                          .where((p) =>
+                              p.isAvailable && p.expiresAt.isAfter(now))
+                          .toList();
+                      final views = active.fold<int>(
+                          0, (total, p) => total + p.viewCount);
+                      return Text(
+                        snapshot.hasData
+                            ? 'Hoy: $views vistas · '
+                                '${active.length} productos activos'
+                            : (_profile?.neighborhood ?? ''),
+                        style: AppTextStyles.bodySmall.copyWith(
+                          color: Colors.white.withValues(alpha: 0.85),
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      );
+                    },
+                  ),
                 ],
               ),
             ),

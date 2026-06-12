@@ -26,6 +26,16 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- canLaunchUrl: apps de navegación (Cómo llegar), llamadas y
+	     WhatsApp. Sin esto canLaunchUrl siempre devuelve false. -->
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>maps</string>
+		<string>comgooglemaps</string>
+		<string>waze</string>
+		<string>tel</string>
+		<string>https</string>
+	</array>
 	<!-- Google Sign-In: reemplazar con el REVERSED_CLIENT_ID que aparece
 	     en GoogleService-Info.plist DESPUÉS de habilitar el proveedor
 	     Google en Firebase Console y re-descargar el plist

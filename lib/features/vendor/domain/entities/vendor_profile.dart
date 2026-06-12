@@ -5,6 +5,7 @@
 class VendorProfile {
   const VendorProfile({
     required this.businessName,
+    this.phone,
     this.photoUrl,
     this.latitude,
     this.longitude,
@@ -15,6 +16,10 @@ class VendorProfile {
 
   /// Nombre de la tienda (máx. 50 caracteres).
   final String businessName;
+
+  /// Número de contacto en formato internacional (`+502XXXXXXXX`).
+  /// Lo usan los botones Llamar/WhatsApp del mapa del comprador.
+  final String? phone;
 
   /// URL de la foto del negocio (Storage) o ruta local en modo demo.
   final String? photoUrl;
@@ -33,6 +38,7 @@ class VendorProfile {
 
   VendorProfile copyWith({
     String? businessName,
+    String? phone,
     String? photoUrl,
     double? latitude,
     double? longitude,
@@ -42,6 +48,7 @@ class VendorProfile {
   }) {
     return VendorProfile(
       businessName: businessName ?? this.businessName,
+      phone: phone ?? this.phone,
       photoUrl: photoUrl ?? this.photoUrl,
       latitude: latitude ?? this.latitude,
       longitude: longitude ?? this.longitude,

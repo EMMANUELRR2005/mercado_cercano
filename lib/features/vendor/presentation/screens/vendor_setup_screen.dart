@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geocoding/geocoding.dart' as geocoding;
 import 'package:geolocator/geolocator.dart';
@@ -35,6 +36,7 @@ class VendorSetupScreen extends ConsumerStatefulWidget {
 class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _referenceController = TextEditingController();
   final _picker = ImagePicker();
 
@@ -59,6 +61,7 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _phoneController.dispose();
     _referenceController.dispose();
     super.dispose();
   }
@@ -71,6 +74,12 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
       if (!mounted) return;
       if (profile != null) {
         _nameController.text = profile.businessName;
+        // El doc guarda "+502XXXXXXXX"; el campo edita solo los 8 dígitos.
+        _phoneController.text =
+            (profile.phone ?? '').replaceAll(RegExp(r'\D'), '').replaceFirst(
+                  RegExp(r'^502'),
+                  '',
+                );
         _referenceController.text = profile.locationReference ?? '';
         _existingPhotoUrl = profile.photoUrl;
         _neighborhood = profile.neighborhood;
@@ -251,6 +260,7 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
       await ref.read(vendorProfileDatasourceProvider).saveProfile(
             VendorProfile(
               businessName: _nameController.text.trim(),
+              phone: '+502${_phoneController.text.trim()}',
               photoUrl: _existingPhotoUrl,
               latitude: _coordinates!.latitude,
               longitude: _coordinates!.longitude,
@@ -373,6 +383,39 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
                     ),
                     const SizedBox(height: 16),
 
+                    // --- Número de contacto ---
+                    const Text('Número de contacto',
+                        style: AppTextStyles.titleSmall),
+                    const SizedBox(height: 8),
+                    TextFormField(
+                      controller: _phoneController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 8,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                      ],
+                      decoration: const InputDecoration(
+                        // Prefijo fijo de Guatemala (visual, no editable).
+                        prefixText: '+502 ',
+                        hintText: 'Ej: 55551234',
+                        helperText:
+                            'Los compradores te llamarán o escribirán '
+                            'por WhatsApp a este número.',
+                        helperMaxLines: 2,
+                      ),
+                      validator: (v) {
+                        final digits = (v ?? '').trim();
+                        if (digits.isEmpty) {
+                          return 'Ingresa tu número de contacto';
+                        }
+                        if (!RegExp(r'^\d{8}$').hasMatch(digits)) {
+                          return 'El número debe tener exactamente 8 dígitos';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+
                     // --- Ubicación ---
                     const Text('Ubicación del negocio',
                         style: AppTextStyles.titleSmall),
@@ -466,8 +509,12 @@ class _VendorSetupScreenState extends ConsumerState<VendorSetupScreen> {
       appImageProvider(_pickedPhotoPath ?? _existingPhotoUrl);
 }
 
-/// Mini mapa de pantalla completa con pin arrastrable; devuelve la
-/// coordenada elegida con `Navigator.pop`.
+/// Mini mapa de pantalla completa para elegir la ubicación del negocio.
+///
+/// El pin es un ícono FIJO al centro de la pantalla (no un Marker): la
+/// selección es siempre el centro de la cámara, así se mantiene centrado
+/// mientras el usuario mueve y hace zoom. Devuelve la coordenada con
+/// `Navigator.pop`.
 class _MapPickerScreen extends StatefulWidget {
   const _MapPickerScreen({required this.initial});
 
@@ -478,7 +525,23 @@ class _MapPickerScreen extends StatefulWidget {
 }
 
 class _MapPickerScreenState extends State<_MapPickerScreen> {
+  GoogleMapController? _controller;
+
+  /// Selección = último centro de la cámara (sin setState: el pin es
+  /// fijo en pantalla y no hay nada más que repintar).
   late LatLng _selected = widget.initial;
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  void _zoom(double delta) {
+    _controller?.animateCamera(
+      delta > 0 ? CameraUpdate.zoomIn() : CameraUpdate.zoomOut(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -493,22 +556,97 @@ class _MapPickerScreenState extends State<_MapPickerScreen> {
         icon: const Icon(Icons.check),
         label: const Text('Confirmar ubicación'),
       ),
-      body: GoogleMap(
-        initialCameraPosition:
-            CameraPosition(target: widget.initial, zoom: 16),
-        myLocationEnabled: true,
-        myLocationButtonEnabled: true,
-        // Tocar el mapa o arrastrar el pin: ambos mueven la selección.
-        onTap: (position) => setState(() => _selected = position),
-        markers: {
-          Marker(
-            markerId: const MarkerId('business'),
-            position: _selected,
-            draggable: true,
-            onDragEnd: (position) =>
-                setState(() => _selected = position),
+      body: Stack(
+        children: [
+          GoogleMap(
+            initialCameraPosition:
+                CameraPosition(target: widget.initial, zoom: 16),
+            myLocationEnabled: true,
+            myLocationButtonEnabled: true,
+            zoomGesturesEnabled: true,
+            zoomControlsEnabled: true,
+            scrollGesturesEnabled: true,
+            minMaxZoomPreference: const MinMaxZoomPreference(5.0, 20.0),
+            onMapCreated: (controller) => _controller = controller,
+            // La selección sigue al centro de la cámara.
+            onCameraMove: (position) => _selected = position.target,
+            // Tocar el mapa centra la cámara (y el pin) en ese punto.
+            onTap: (position) => _controller?.animateCamera(
+              CameraUpdate.newLatLng(position),
+            ),
           ),
-        },
+
+          // Pin fijo al centro: la punta toca el centro exacto del mapa,
+          // por eso se desplaza hacia arriba la mitad de su altura.
+          IgnorePointer(
+            child: Center(
+              child: Transform.translate(
+                offset: const Offset(0, -22),
+                child: const Icon(
+                  Icons.place,
+                  size: 44,
+                  color: AppColors.errorRed,
+                ),
+              ),
+            ),
+          ),
+
+          // Botones manuales de zoom (esquina inferior derecha).
+          Positioned(
+            right: 16,
+            bottom: 96,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _PickerZoomButton(
+                  icon: Icons.add,
+                  tooltip: 'Acercar',
+                  onTap: () => _zoom(1),
+                ),
+                const SizedBox(height: 4),
+                _PickerZoomButton(
+                  icon: Icons.remove,
+                  tooltip: 'Alejar',
+                  onTap: () => _zoom(-1),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Botón cuadrado 40×40 con sombra suave para el zoom del mini mapa.
+class _PickerZoomButton extends StatelessWidget {
+  const _PickerZoomButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Tooltip(
+          message: tooltip,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(icon, size: 20, color: AppColors.textPrimary),
+          ),
+        ),
       ),
     );
   }

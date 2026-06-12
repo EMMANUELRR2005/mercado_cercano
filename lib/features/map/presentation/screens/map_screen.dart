@@ -184,6 +184,16 @@ class _MapScreenState extends ConsumerState<MapScreen> {
           infoWindow: InfoWindow(title: vendorLocation.vendor.name),
           onTap: () async {
             bloc.add(VendorSelected(vendorLocation.vendor.id));
+            // Centra el pin con offset hacia arriba para que el
+            // bottom sheet (45% de pantalla) no lo tape.
+            _mapController?.animateCamera(
+              CameraUpdate.newLatLng(
+                LatLng(
+                  vendorLocation.latitude - 0.002,
+                  vendorLocation.longitude,
+                ),
+              ),
+            );
             await VendorInfoBottomSheet.show(context, vendorLocation);
             bloc.add(const VendorDeselected());
           },
@@ -245,21 +255,6 @@ class _MapScreenState extends ConsumerState<MapScreen> {
               state.status == MapStatus.initial;
 
           return Scaffold(
-            // FAB "Mi ubicación": recentra la cámara en el comprador si
-            // se alejó navegando el mapa. Oculto sin permiso (fallback).
-            floatingActionButton: state.locationDenied
-                ? null
-                : Padding(
-                    padding: const EdgeInsets.only(bottom: 64),
-                    child: FloatingActionButton.small(
-                      heroTag: 'map_my_location_fab',
-                      backgroundColor: AppColors.surfaceWhite,
-                      foregroundColor: AppColors.primaryGreen,
-                      tooltip: 'Mi ubicación',
-                      onPressed: () => _centerOnUser(state),
-                      child: const Icon(Icons.my_location),
-                    ),
-                  ),
             body: Stack(
               children: [
                 GoogleMap(
@@ -268,7 +263,15 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                   // botón nativo de "mi ubicación" (usamos nuestro FAB).
                   myLocationEnabled: !state.locationDenied,
                   myLocationButtonEnabled: false,
-                  zoomControlsEnabled: false,
+                  // Gestos nativos completos: pinch para zoom, arrastre,
+                  // rotación y tilt. En Android además botones +/- nativos.
+                  zoomGesturesEnabled: true,
+                  zoomControlsEnabled: true,
+                  scrollGesturesEnabled: true,
+                  rotateGesturesEnabled: true,
+                  tiltGesturesEnabled: true,
+                  // 5 = país completo, 20 = nivel de calle.
+                  minMaxZoomPreference: const MinMaxZoomPreference(5.0, 20.0),
                   markers: _buildMarkers(context, state),
                   circles: _buildRadiusCircle(state),
                   onMapCreated: (controller) => _mapController = controller,
@@ -309,8 +312,57 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                           const SizedBox(height: 8),
                           const _LocationDeniedChip(),
                         ],
+                        // Sin vendedores: aviso discreto que no tapa el
+                        // mapa; desaparece solo al aparecer vendedores.
+                        if (state.status == MapStatus.ready &&
+                            state.visibleVendors.isEmpty) ...[
+                          const SizedBox(height: 12),
+                          const Center(
+                            child: IgnorePointer(child: _NoVendorsChip()),
+                          ),
+                        ],
                       ],
                     ),
+                  ),
+                ),
+
+                // --- Controles flotantes: zoom y mi ubicación ---
+                // De abajo hacia arriba: 📍 mi ubicación, +, −.
+                Positioned(
+                  right: 16,
+                  bottom: 96,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _MapSquareButton(
+                        tooltip: 'Alejar',
+                        icon: Icons.remove,
+                        onTap: () => _mapController?.animateCamera(
+                          CameraUpdate.zoomOut(),
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      _MapSquareButton(
+                        tooltip: 'Acercar',
+                        icon: Icons.add,
+                        onTap: () => _mapController?.animateCamera(
+                          CameraUpdate.zoomIn(),
+                        ),
+                      ),
+                      // FAB "Mi ubicación": recentra la cámara en el
+                      // comprador. Oculto sin permiso (fallback).
+                      if (!state.locationDenied) ...[
+                        const SizedBox(height: 4),
+                        FloatingActionButton.small(
+                          heroTag: 'map_my_location_fab',
+                          backgroundColor: AppColors.surfaceWhite,
+                          foregroundColor: AppColors.primaryGreen,
+                          tooltip: 'Mi ubicación',
+                          onPressed: () => _centerOnUser(state),
+                          child: const Icon(Icons.my_location),
+                        ),
+                      ],
+                    ],
                   ),
                 ),
 
@@ -339,30 +391,81 @@ class _MapScreenState extends ConsumerState<MapScreen> {
                       onRetry: () => bloc.add(const MapStarted()),
                     ),
                   ),
-                if (state.status == MapStatus.ready &&
-                    state.visibleVendors.isEmpty)
-                  IgnorePointer(
-                    child: Center(
-                      child: Material(
-                        color: AppColors.surfaceWhite.withValues(alpha: 0.95),
-                        borderRadius: BorderRadius.circular(16),
-                        child: const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: EmptyStateWidget(
-                            icon: Icons.storefront_outlined,
-                            title: 'Sin vendedores cerca',
-                            subtitle:
-                                'Amplía el radio de búsqueda o cambia los '
-                                'filtros para encontrar más puestos.',
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
               ],
             ),
           );
         },
+      ),
+    );
+  }
+}
+
+/// Aviso discreto cuando no hay vendedores en la zona visible: flota
+/// bajo la barra de búsqueda sin tapar el mapa.
+class _NoVendorsChip extends StatelessWidget {
+  const _NoVendorsChip();
+
+  static const _gray = Color(0xFF6B7280);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceWhite.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.storefront_outlined, size: 16, color: _gray),
+          SizedBox(width: 6),
+          Text(
+            'Sin vendedores en esta zona',
+            style: TextStyle(fontSize: 12, color: _gray),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Botón cuadrado pequeño (40×40) para los controles de zoom del mapa.
+class _MapSquareButton extends StatelessWidget {
+  const _MapSquareButton({
+    required this.icon,
+    required this.tooltip,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String tooltip;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceWhite,
+      elevation: 2,
+      borderRadius: BorderRadius.circular(8),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Tooltip(
+          message: tooltip,
+          child: SizedBox(
+            width: 40,
+            height: 40,
+            child: Icon(icon, size: 20, color: AppColors.textPrimary),
+          ),
+        ),
       ),
     );
   }

@@ -13,6 +13,7 @@ class ProductCard extends StatelessWidget {
     super.key,
     required this.product,
     this.distanceKm,
+    this.showViews = false,
     this.onTap,
   });
 
@@ -20,6 +21,10 @@ class ProductCard extends StatelessWidget {
 
   /// Distancia en kilómetros al vendedor (opcional).
   final double? distanceKm;
+
+  /// Muestra el contador de vistas bajo el precio (catálogo del
+  /// vendedor; los compradores no lo ven).
+  final bool showViews;
 
   final VoidCallback? onTap;
 
@@ -78,6 +83,25 @@ class ProductCard extends StatelessWidget {
                         Text(
                           Formatters.formatDistance(distanceKm! * 1000),
                           style: AppTextStyles.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ],
+                  if (showViews) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.visibility_outlined,
+                          size: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                        const SizedBox(width: 2),
+                        Text(
+                          '${product.viewCount} vistas',
+                          style: AppTextStyles.bodySmall.copyWith(
+                            color: AppColors.textSecondary,
+                          ),
                         ),
                       ],
                     ),

@@ -7,6 +7,7 @@ import '../../data/datasources/map_remote_datasource.dart';
 import '../../data/datasources/map_websocket_datasource.dart';
 import '../../data/datasources/place_search_service.dart';
 import '../../data/datasources/user_location_service.dart';
+import '../../data/datasources/vendor_products_service.dart';
 import '../../data/repositories/map_repository_impl.dart';
 import '../../domain/repositories/map_repository.dart';
 import '../../domain/usecases/get_user_location_usecase.dart';
@@ -50,6 +51,11 @@ final mapWebsocketDatasourceProvider = Provider<MapWebsocketDatasource>((ref) {
 /// memoria.
 final userLocationServiceProvider = Provider<UserLocationService>((ref) {
   return UserLocationServiceImpl();
+});
+
+/// Catálogo en vivo de un vendedor (para el bottom sheet del pin).
+final vendorProductsServiceProvider = Provider<VendorProductsService>((ref) {
+  return VendorProductsService(ref.watch(firestoreServiceProvider));
 });
 
 /// Búsqueda de direcciones/lugares (geocoder nativo, sin API key).

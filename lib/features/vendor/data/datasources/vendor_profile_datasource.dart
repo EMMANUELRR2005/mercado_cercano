@@ -53,6 +53,7 @@ class FirestoreVendorProfileDatasource implements VendorProfileDatasource {
     final coordinates = doc['coordinates'];
     return VendorProfile(
       businessName: (doc['businessName'] as String?) ?? '',
+      phone: doc['phone'] as String?,
       photoUrl: doc['photoUrl'] as String?,
       latitude: coordinates is GeoPoint ? coordinates.latitude : null,
       longitude: coordinates is GeoPoint ? coordinates.longitude : null,
@@ -90,6 +91,10 @@ class FirestoreVendorProfileDatasource implements VendorProfileDatasource {
       {
         'userId': uid,
         'businessName': profile.businessName,
+        // Mismo número para Llamar (tel:+502…) y WhatsApp (wa.me/502…)
+        // en el VendorInfoBottomSheet del comprador.
+        'phone': ?profile.phone,
+        'whatsapp': ?profile.phone,
         'photoUrl': ?photoUrl,
         if (profile.latitude != null && profile.longitude != null)
           'coordinates':

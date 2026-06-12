@@ -209,7 +209,9 @@ class _ProductsTab extends StatelessWidget {
           crossAxisCount: 2,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: 0.78,
+          // Más alto que el grid del comprador: la tarjeta del vendedor
+          // agrega la fila de vistas bajo el precio.
+          childAspectRatio: 0.72,
         ),
         itemCount: products.length,
         itemBuilder: (context, index) {
@@ -219,6 +221,7 @@ class _ProductsTab extends StatelessWidget {
               Positioned.fill(
                 child: ProductCard(
                   product: product,
+                  showViews: true,
                   onTap: () => _openEdit(context, product),
                 ),
               ),
