@@ -162,6 +162,11 @@ class VendorFirestoreDatasource implements VendorRemoteDatasource {
       'price': product.price,
       'photoUrl': photoUrl,
       'isAvailable': product.isAvailable,
+      // La vigencia DEBE persistirse: es lo único que cambia al "Renovar"
+      // un producto. Sin esto la renovación no se guardaba y el stream del
+      // catálogo volvía a emitir el expiresAt anterior. En editar es un
+      // no-op (se reescribe el mismo valor cargado).
+      'expiresAt': Timestamp.fromDate(product.expiresAt),
       'unit': product.unit,
       'description': product.description,
     });
