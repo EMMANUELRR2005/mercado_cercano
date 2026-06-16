@@ -141,15 +141,29 @@ class LoginScreen extends ConsumerWidget {
 
                   const Spacer(flex: 2),
 
-                  // --- Footer legal ---
+                  // --- Footer legal (tappable → pantalla legal) ---
                   Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: Text(
-                      'Al continuar aceptas nuestros Términos y '
-                      'Política de Privacidad',
-                      textAlign: TextAlign.center,
-                      style: AppTextStyles.bodySmall
-                          .copyWith(color: AppColors.textHint),
+                    child: GestureDetector(
+                      onTap: () => context.pushNamed(RouteNames.legal),
+                      child: Text.rich(
+                        TextSpan(
+                          text: 'Al continuar aceptas nuestros ',
+                          children: [
+                            TextSpan(
+                              text: 'Términos y Política de Privacidad',
+                              style: AppTextStyles.bodySmall.copyWith(
+                                color: AppColors.primaryGreen,
+                                fontWeight: FontWeight.w600,
+                                decoration: TextDecoration.underline,
+                              ),
+                            ),
+                          ],
+                        ),
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.bodySmall
+                            .copyWith(color: AppColors.textHint),
+                      ),
                     ),
                   ),
                 ],

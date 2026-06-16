@@ -98,6 +98,22 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
+  Future<void> deleteAccount() async {
+    // Conservar la marca de onboarding como en [logout]: borrar la cuenta
+    // no debe re-mostrar el onboarding en el dispositivo.
+    final onboardingDone = await _local.isOnboardingComplete();
+
+    // Si el datasource lanza (p. ej. reautenticación cancelada), NO se
+    // limpia la sesión local: el usuario sigue dentro y puede reintentar.
+    await _datasource.deleteAccount();
+
+    await _secureStorage.clearAll();
+    if (onboardingDone) {
+      await _local.setOnboardingComplete();
+    }
+  }
+
+  @override
   Future<UserEntity?> checkAuthStatus() async {
     // 1) Restauración por Firebase (currentUser + silent refresh).
     try {

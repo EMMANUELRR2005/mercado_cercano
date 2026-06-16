@@ -4,6 +4,7 @@ import '../cache/offline_cache_service.dart';
 import '../firebase/activity_logger.dart';
 import '../firebase/firebase_storage_service.dart';
 import '../firebase/firestore_service.dart';
+import '../firebase/push_notification_service.dart';
 import '../network/dio_client.dart';
 import '../network/network_info.dart';
 import '../storage/secure_storage.dart';
@@ -54,4 +55,11 @@ final firebaseStorageServiceProvider =
 /// Caché offline (Hive) con TTL: productos 30 min, precios 1 h.
 final offlineCacheServiceProvider = Provider<OfflineCacheService>((ref) {
   return OfflineCacheService();
+});
+
+/// Notificaciones push (FCM): permiso EN CONTEXTO (al entrar a Alertas),
+/// nunca al arrancar la app.
+final pushNotificationServiceProvider =
+    Provider<PushNotificationService>((ref) {
+  return PushNotificationService();
 });

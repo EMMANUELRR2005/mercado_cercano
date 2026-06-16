@@ -8,9 +8,13 @@ import GoogleMaps
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Google Maps API key (proyecto mercado-cercano-28190).
-    // Debe registrarse antes de que los plugins de Flutter se inicialicen.
-    GMSServices.provideAPIKey("AIzaSyD_B-PVASCES6e-UjHy-x50kWJCMRDcelI")
+    // Google Maps API key leída de Info.plist (GMSApiKey ← $(MAPS_API_KEY)
+    // desde ios/Flutter/Secrets.xcconfig, no versionada). Sin key el mapa
+    // no renderiza pero la app no crashea.
+    if let mapsApiKey = Bundle.main.object(forInfoDictionaryKey: "GMSApiKey") as? String,
+       !mapsApiKey.isEmpty {
+      GMSServices.provideAPIKey(mapsApiKey)
+    }
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 

@@ -60,6 +60,12 @@ class LogoutRequested extends AuthEvent {
   const LogoutRequested();
 }
 
+/// Borra la cuenta del usuario (datos + cuenta de Auth). Requisito de
+/// App Store / Google Play. Al completarse, emite [Unauthenticated].
+class AccountDeletionRequested extends AuthEvent {
+  const AccountDeletionRequested();
+}
+
 /// `authStateChanges` reportó que la sesión ya no existe
 /// (token revocado, usuario eliminado): cerrar la sesión local.
 class SessionExpiredExternally extends AuthEvent {

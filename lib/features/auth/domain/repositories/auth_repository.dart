@@ -46,6 +46,11 @@ abstract class AuthRepository {
   /// (conservando la marca de onboarding completado).
   Future<void> logout();
 
+  /// Borra la cuenta del usuario (datos en Firestore + cuenta de Auth) y
+  /// limpia la sesión local. LANZA `AppException` si falla (p. ej. exige
+  /// reautenticación que el usuario canceló).
+  Future<void> deleteAccount();
+
   /// Restaura la sesión guardada. Devuelve `null` si no hay sesión.
   Future<UserEntity?> checkAuthStatus();
 

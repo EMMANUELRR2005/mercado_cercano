@@ -11,7 +11,7 @@ mapa en tiempo real y un índice colaborativo de la canasta básica.
 
 | Rol | Funcionalidad |
 |---|---|
-| Ambos | Autenticación por SMS OTP (+502), selector de rol, modo offline con banner |
+| Ambos | Autenticación con Google, Apple y Email/Password, selector de rol, modo offline con banner, borrado de cuenta in-app |
 | Vendedor | Publicar producto en 3 toques (foto → datos → confirmar), catálogo con vigencia de 24 h, "Renovar todo", marcar agotado, estadísticas con gráfica de vistas |
 | Comprador | Búsqueda por categoría con filtros (radio, precio, rating), mapa con pins por categoría y updates en tiempo real, perfil de vendedor con llamada/WhatsApp |
 | Comprador | Índice de precios por zona, historial con gráfica (Premium), alertas de precio (Premium), reporte ciudadano de precios, calificaciones y reseñas |
@@ -23,12 +23,19 @@ Requisitos: Flutter 3.44+ (Dart 3.12).
 ```bash
 flutter pub get
 dart run build_runner build   # genera freezed/json
+
+# Google Maps key (no versionada): copia los ejemplos y pon tu key
+cp android/secrets.properties.example android/secrets.properties
+cp ios/Flutter/Secrets.xcconfig.example ios/Flutter/Secrets.xcconfig
+
 flutter run
 ```
 
-La app arranca en modo **demo** (`AppConstants.useMockData = true`):
-funciona completa sin backend. Para probar el login usa cualquier
-teléfono de 8 dígitos y el código OTP **123456**.
+La app corre **contra Firebase real** (proyecto `mercado-cercano-28190`):
+Auth (Google/Apple/Email), Cloud Firestore, Storage y Messaging. Ya **no**
+hay modo demo ni datasources mock. Para publicar en tiendas y la
+configuración manual pendiente, ver **[MIGRATION.md](MIGRATION.md)** y
+**[STORE_CHECKLIST.md](STORE_CHECKLIST.md)**.
 
 ## Arquitectura
 
@@ -42,19 +49,19 @@ lib/
 │   └── di/injection_container.dart   # appRouterProvider (guard de auth)
 ├── shared/
 │   ├── domain/entities/   # ProductEntity, VendorEntity, UserEntity, PriceIndex…
-│   ├── widgets/           # PriceTag, ProductCard, PremiumFeatureGate, etc. (14)
-│   └── mock/mock_data_service.dart   # índice de todos los mocks
+│   ├── widgets/           # PriceTag, ProductCard, AppImage, etc.
+│   └── screens/           # settings, legal (privacidad/términos)
 ├── features/
-│   ├── auth/              # OTP por SMS, roles, splash/onboarding
-│   ├── vendor/            # publicar, catálogo, estadísticas
+│   ├── auth/              # Google/Apple/Email, roles, splash/onboarding, borrado de cuenta
+│   ├── vendor/            # publicar, catálogo, estadísticas (Firestore + Storage)
 │   ├── buyer/             # búsqueda, detalle, perfil de vendedor, reportes
 │   ├── price_index/       # índice, historial (Pro), alertas (Pro)
-│   ├── map/               # mapa tiempo real (REST + WebSocket simulado)
+│   ├── map/               # mapa en tiempo real (Firestore streams)
 │   └── reputation/        # calificaciones y reseñas
 └── l10n/                  # es (default) + en
 ```
 
-Cada feature: `data/` (datasources remote + mock, models freezed+json,
+Cada feature: `data/` (datasources Firestore, models freezed+json,
 repository impl) · `domain/` (entities, repository abstracto, usecases) ·
 `presentation/` (bloc, providers Riverpod, screens).
 
@@ -67,17 +74,21 @@ Convenciones:
 - Monetización lista: `isFeatured`, `UserSubscription {free, pro, family}`
   y `PremiumFeatureGate` en historial y alertas.
 
-## Configuración pendiente (para salir del modo demo)
+## Configuración pendiente (para publicar en tiendas)
 
-| Qué | Dónde |
-|---|---|
-| URL del backend real | `AppConstants.baseUrl` y `wsUrl` + poner `useMockData = false` |
-| Google Maps API key (Android) | `android/app/src/main/AndroidManifest.xml` → `com.google.android.geo.API_KEY` (hoy placeholder `YOUR_GOOGLE_MAPS_API_KEY`) |
-| Google Maps API key (iOS) | `ios/Runner/AppDelegate.swift` → `GMSServices.provideAPIKey(...)` |
-| Firebase | `flutterfire configure` (genera `firebase_options.dart`, `google-services.json`, `GoogleService-Info.plist`) y descomentar `Firebase.initializeApp` en `lib/main.dart` |
+El detalle completo está en **[MIGRATION.md](MIGRATION.md)**. Resumen de lo
+que solo puedes hacer tú (consolas, llaves, dominios):
 
-Permisos nativos (ubicación, cámara, galería) ya están declarados en el
-AndroidManifest y el Info.plist con textos en español.
+- Rename del id a `gt.mercadocercano.app` + re-registro en Firebase.
+- Habilitar Google/Apple/Email en Firebase Auth.
+- Plan Blaze + bucket de Storage (hoy las fotos caen a base64 en Firestore).
+- Keystore de release (`android/key.properties`).
+- Rotar/restringir la Google Maps key; crear `secrets.properties` / `Secrets.xcconfig`.
+- Agregar `PrivacyInfo.xcprivacy` al target Runner en Xcode.
+- Publicar URLs reales de Privacidad/Términos.
+
+Permisos nativos (ubicación *when-in-use*, cámara, galería, notificaciones)
+están declarados con textos en español y se piden **en contexto**.
 
 ## Comandos útiles
 

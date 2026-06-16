@@ -75,4 +75,8 @@ class RouteNames {
 
   static const String settings = 'settings';
   static const String settingsPath = '/shared/settings';
+
+  // Legal: accesible SIN sesión (desde el login) y con sesión (settings).
+  static const String legal = 'legal';
+  static const String legalPath = '/legal';
 }

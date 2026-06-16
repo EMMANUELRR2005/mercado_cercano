@@ -213,6 +213,117 @@ class AuthFirebaseDatasource implements AuthRemoteDatasource {
     await _auth.signOut();
   }
 
+  // -------------------------------------------------------------------
+  // Borrado de cuenta (requisito de App Store / Google Play)
+  // -------------------------------------------------------------------
+
+  @override
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw const AuthException('La sesión expiró. Inicia sesión de nuevo.');
+    }
+
+    // 1) Borrar los datos del usuario en Firestore MIENTRAS sigue
+    //    autenticado (las reglas exigen request.auth.uid == dueño). Las
+    //    contribuciones inmutables (price_reports, ratings) se conservan
+    //    de forma anónima por diseño del índice colaborativo.
+    await _deleteUserData(user.uid);
+
+    // 2) Borrar la cuenta de Firebase Auth. Si exige login reciente,
+    //    reautenticar con el proveedor original y reintentar.
+    try {
+      await user.delete();
+    } on FirebaseAuthException catch (e) {
+      if (e.code != 'requires-recent-login') {
+        throw _mapFirebaseAuthException(e);
+      }
+      final credential = await _reauthCredential(user);
+      if (credential == null) {
+        // Email/Password: no podemos reautenticar sin la contraseña.
+        throw const AuthException(
+          'Por seguridad, cierra sesión y vuelve a iniciarla antes de '
+          'borrar tu cuenta.',
+        );
+      }
+      try {
+        await user.reauthenticateWithCredential(credential);
+        await user.delete();
+      } on FirebaseAuthException catch (e2) {
+        throw _mapFirebaseAuthException(e2);
+      }
+    }
+
+    // 3) Cerrar la sesión del proveedor social (best-effort).
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {
+      // best-effort
+    }
+  }
+
+  /// Borra perfil, negocio, productos y alertas del usuario en un batch.
+  /// Best-effort: un fallo parcial no debe dejar la cuenta a medio borrar
+  /// (el caller propaga el error y el usuario puede reintentar).
+  Future<void> _deleteUserData(String uid) async {
+    final batch = _firestore.batch();
+
+    // Catálogo del vendedor.
+    final products = await _firestore
+        .collection('products')
+        .where('vendorId', isEqualTo: uid)
+        .get();
+    for (final doc in products.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // Alertas de precio del usuario.
+    final alerts = await _firestore
+        .collection('price_alerts')
+        .where('userId', isEqualTo: uid)
+        .get();
+    for (final doc in alerts.docs) {
+      batch.delete(doc.reference);
+    }
+
+    // Perfil de negocio (no-op si no es vendedor) y documento de usuario.
+    batch.delete(_firestore.collection('vendors').doc(uid));
+    batch.delete(_users.doc(uid));
+
+    await batch.commit();
+  }
+
+  /// Credencial fresca para reautenticar antes de borrar la cuenta.
+  /// `null` para Email/Password (requiere re-login manual).
+  Future<AuthCredential?> _reauthCredential(User user) async {
+    final providerId =
+        user.providerData.isNotEmpty ? user.providerData.first.providerId : '';
+
+    if (providerId == 'google.com') {
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        throw const ValidationException('Operación cancelada');
+      }
+      final googleAuth = await account.authentication;
+      return GoogleAuthProvider.credential(
+        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken,
+      );
+    }
+
+    if (providerId == 'apple.com') {
+      final appleCredential = await SignInWithApple.getAppleIDCredential(
+        scopes: [AppleIDAuthorizationScopes.email],
+      );
+      return OAuthProvider('apple.com').credential(
+        idToken: appleCredential.identityToken,
+        accessToken: appleCredential.authorizationCode,
+      );
+    }
+
+    return null;
+  }
+
   @override
   Future<AuthResponseModel?> restoreSession() async {
     final firebaseUser = _auth.currentUser;

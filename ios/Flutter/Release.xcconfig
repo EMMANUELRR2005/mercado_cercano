@@ -1,2 +1,5 @@
 #include? "Pods/Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"
 #include "Generated.xcconfig"
+// Google Maps API key (no versionada). Opcional: si falta, MAPS_API_KEY
+// queda vacía y el build no falla. Ver ios/Flutter/Secrets.xcconfig.example.
+#include? "Secrets.xcconfig"

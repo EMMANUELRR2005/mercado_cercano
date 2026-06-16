@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/di/core_providers.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/utils/formatters.dart';
@@ -45,6 +46,9 @@ class _PriceAlertsScreenState extends ConsumerState<PriceAlertsScreen> {
   void initState() {
     super.initState();
     _bloc = createPriceBloc(ref)..add(const PriceAlertsRequested());
+    // Permiso de notificaciones EN CONTEXTO: el usuario entró a Alertas,
+    // que solo tienen sentido con notificaciones (no se pide al arrancar).
+    ref.read(pushNotificationServiceProvider).ensurePermissionAndRegister();
   }
 
   @override
