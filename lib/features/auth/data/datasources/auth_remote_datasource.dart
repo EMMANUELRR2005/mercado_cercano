@@ -37,6 +37,13 @@ abstract class AuthRemoteDatasource {
   /// Cierra la sesión (Firebase + proveedor social).
   Future<void> logout();
 
+  /// Borra la cuenta del usuario: elimina sus datos en Firestore
+  /// (perfil, negocio, productos, alertas) y luego la cuenta de Firebase
+  /// Auth. Si Firebase exige reautenticación reciente, reautentica con el
+  /// proveedor original (Google/Apple); para Email/Password lanza una
+  /// [AuthException] pidiendo volver a iniciar sesión.
+  Future<void> deleteAccount();
+
   /// Restaura la sesión persistida (silent refresh del ID token).
   /// `null` = no hay sesión restaurable por esta vía.
   Future<AuthResponseModel?> restoreSession();

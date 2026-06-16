@@ -4,6 +4,10 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<!-- Google Maps API key inyectada desde ios/Flutter/Secrets.xcconfig
+	     (no versionada). AppDelegate la lee de aquí. -->
+	<key>GMSApiKey</key>
+	<string>$(MAPS_API_KEY)</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -49,18 +53,14 @@
 			</array>
 		</dict>
 	</array>
+	<!-- Solo "When In Use": la app NO usa ubicación en background (se
+	     quitaron las claves Always para no implicarlo ante App Review). -->
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
-	<key>NSLocationAlwaysUsageDescription</key>
-	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
-	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>MercadoCercano usa tu ubicación para mostrarte vendedores y precios cercanos. Tu ubicación nunca se almacena.</string>
 	<key>NSCameraUsageDescription</key>
 	<string>MercadoCercano usa la cámara para tomar fotos de tus productos al publicarlos.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>MercadoCercano accede a tus fotos para elegir imágenes de tus productos.</string>
-	<key>NSMicrophoneUsageDescription</key>
-	<string>MercadoCercano puede usar el micrófono al grabar videos de tus productos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

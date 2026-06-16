@@ -52,6 +52,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<PasswordResetRequested>(_onPasswordResetRequested);
     on<RoleSelected>(_onRoleSelected);
     on<LogoutRequested>(_onLogoutRequested);
+    on<AccountDeletionRequested>(_onAccountDeletionRequested);
     on<SessionExpiredExternally>(_onSessionExpiredExternally);
 
     // authStateChanges como fuente de verdad: si Firebase cierra la
@@ -171,6 +172,22 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } finally {
       // Pase lo que pase, la sesión local queda cerrada.
       emit(const Unauthenticated());
+    }
+  }
+
+  Future<void> _onAccountDeletionRequested(
+    AccountDeletionRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    emit(const AuthLoading());
+    // El log va antes de borrar (necesita el userId aún en storage).
+    await _activityLogger?.log(ActivityAction.accountDeleted);
+    try {
+      await _repository.deleteAccount();
+      emit(const Unauthenticated());
+    } catch (e) {
+      // Falló (p. ej. reautenticación cancelada): la sesión sigue activa.
+      emit(AuthError(_messageOf(e)));
     }
   }
 

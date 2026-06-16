@@ -3,6 +3,9 @@
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.CAMERA"/>
+    <!-- Android 13+ (API 33): permiso runtime de notificaciones para FCM
+         (alertas de precio). Se solicita en contexto, no al arranque. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="mercado_cercano"
         android:name="${applicationName}"
@@ -29,10 +32,11 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <!-- Google Maps API key (proyecto mercado-cercano-28190) -->
+        <!-- Google Maps API key: inyectada por Gradle desde
+             android/secrets.properties (no se versiona). Ver MIGRATION.md. -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyD_B-PVASCES6e-UjHy-x50kWJCMRDcelI"/>
+            android:value="${MAPS_API_KEY}"/>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

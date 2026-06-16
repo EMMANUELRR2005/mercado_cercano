@@ -1,0 +1,12 @@
+# Copia este archivo a android/key.properties (NO se versiona) para firmar
+# el build de release de Google Play.
+#
+# Genera tu upload keystore con:
+#   keytool -genkey -v -keystore ~/upload-keystore.jks \
+#       -keyalg RSA -keysize 2048 -validity 10000 -alias upload
+#
+# storeFile debe ser una ruta ABSOLUTA al .jks (fuera del repo).
+storePassword=CHANGEME
+keyPassword=CHANGEME
+keyAlias=upload
+storeFile=/ruta/absoluta/a/upload-keystore.jks

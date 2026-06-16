@@ -17,6 +17,7 @@ enum ActivityAction {
   ratingSubmitted,
   roleChanged,
   vendorSetupCompleted,
+  accountDeleted,
 }
 
 /// Registro de actividad en Firestore para auditoría.
@@ -64,5 +65,6 @@ class ActivityLogger {
         ActivityAction.ratingSubmitted => 'rating_submitted',
         ActivityAction.roleChanged => 'role_changed',
         ActivityAction.vendorSetupCompleted => 'vendor_setup_completed',
+        ActivityAction.accountDeleted => 'account_deleted',
       };
 }

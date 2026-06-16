@@ -30,6 +30,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   /// `Authenticated` corresponde a un cambio de rol y hay que redirigir.
   UserRole? _pendingRole;
 
+  /// `true` mientras corre un borrado de cuenta (para distinguir su error
+  /// del de un cambio de rol en el listener).
+  bool _deleting = false;
+
   UserRole? _currentRole(AuthState state) =>
       state is Authenticated ? state.user.role : null;
 
@@ -152,6 +156,45 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  // -----------------------------------------------------------------
+  // Borrado de cuenta (requisito de App Store / Google Play)
+  // -----------------------------------------------------------------
+
+  Future<void> _confirmDeleteAccount(AuthBloc bloc) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Borrar mi cuenta'),
+        content: const Text(
+          'Esta acción es permanente y no se puede deshacer. Se borrarán tu '
+          'perfil, tu negocio, tus productos y tus alertas.\n\n'
+          'Tus reportes al índice colaborativo de precios se conservan de '
+          'forma anónima.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Borrar definitivamente',
+              style: TextStyle(
+                color: AppColors.errorRed,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed ?? false) {
+      setState(() => _deleting = true);
+      bloc.add(const AccountDeletionRequested());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final authBloc = ref.watch(authBlocProvider);
@@ -179,6 +222,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             ),
           );
           setState(() {});
+        }
+        // Falló el borrado de cuenta (p. ej. reautenticación cancelada):
+        // la sesión sigue activa; avisamos y reactivamos la pantalla.
+        if (state is AuthError && _deleting) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: AppColors.errorRed,
+            ),
+          );
+          setState(() => _deleting = false);
         }
       },
       child: BlocBuilder<AuthBloc, AuthState>(
@@ -318,6 +372,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 ListTile(
                   leading: const Icon(
+                    Icons.policy_outlined,
+                    color: AppColors.primaryGreen,
+                  ),
+                  title: const Text('Privacidad y Términos',
+                      style: AppTextStyles.titleSmall),
+                  subtitle: const Text('Política de privacidad y condiciones'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => context.pushNamed(RouteNames.legal),
+                ),
+                ListTile(
+                  leading: const Icon(
                     Icons.info_outline,
                     color: AppColors.primaryGreen,
                   ),
@@ -338,6 +403,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   ),
                   onTap: () => _confirmLogout(authBloc),
                 ),
+                // --- Zona de peligro: borrado de cuenta ---
+                ListTile(
+                  leading: _deleting
+                      ? const SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.errorRed,
+                          ),
+                        )
+                      : const Icon(Icons.delete_forever_outlined,
+                          color: AppColors.errorRed),
+                  title: const Text(
+                    'Borrar mi cuenta',
+                    style: TextStyle(
+                      color: AppColors.errorRed,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: const Text(
+                    'Elimina tu cuenta y tus datos de forma permanente',
+                  ),
+                  onTap: _deleting ? null : () => _confirmDeleteAccount(authBloc),
+                ),
+                const SizedBox(height: 24),
               ],
             ),
           );

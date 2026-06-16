@@ -25,16 +25,33 @@ class AppConstants {
   static const bool useFirestore = true;
 
   // --- Google Maps ---
-  /// API key de Google Maps (proyecto mercado-cercano-28190).
+  /// API key de Google Maps para usos desde Dart (Static Maps, Places…).
   ///
-  /// Los SDKs nativos la leen de AndroidManifest.xml y AppDelegate.swift;
-  /// esta constante existe para usos desde Dart (Static Maps, Places, etc.)
-  /// y puede sobreescribirse en build con
-  /// `--dart-define=MAPS_API_KEY=...`.
+  /// Los SDKs nativos NO la leen de aquí: Android la toma de
+  /// `android/secrets.properties` (manifest placeholder) e iOS de
+  /// `ios/Flutter/Secrets.xcconfig`. Para usos Dart, inyéctala en build
+  /// con `--dart-define=MAPS_API_KEY=...`. Sin valor queda vacía (no se
+  /// hardcodea ninguna key en el repo).
   static const String googleMapsApiKey = String.fromEnvironment(
     'MAPS_API_KEY',
-    defaultValue: 'AIzaSyD_B-PVASCES6e-UjHy-x50kWJCMRDcelI',
   );
+
+  // --- Legal (App Store / Google Play exigen acceso desde la app) ---
+  /// URLs de Política de Privacidad y Términos. PLACEHOLDERS: reemplázalas
+  /// por las reales antes de publicar (en build con
+  /// `--dart-define=PRIVACY_URL=...` / `--dart-define=TERMS_URL=...` o
+  /// editando el dominio aquí). Ver MIGRATION.md.
+  static const String privacyPolicyUrl = String.fromEnvironment(
+    'PRIVACY_URL',
+    defaultValue: 'https://mercadocercano.gt/privacidad',
+  );
+  static const String termsOfServiceUrl = String.fromEnvironment(
+    'TERMS_URL',
+    defaultValue: 'https://mercadocercano.gt/terminos',
+  );
+
+  /// Correo de soporte/contacto (para borrado de datos y dudas legales).
+  static const String supportEmail = 'soporte@mercadocercano.gt';
 
   // --- Timeouts ---
   static const Duration connectTimeout = Duration(seconds: 15);

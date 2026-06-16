@@ -23,6 +23,7 @@ import '../../features/vendor/presentation/screens/vendor_setup_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_home_screen.dart';
 import '../../features/vendor/presentation/screens/vendor_stats_screen.dart';
 import '../../shared/domain/entities/product_entity.dart';
+import '../../shared/screens/legal_screen.dart';
 import '../../shared/screens/settings_screen.dart';
 import '../constants/route_names.dart';
 
@@ -51,10 +52,12 @@ GoRouter buildRouter({
       final isSplash = location == RouteNames.splashPath;
       final isOnboarding = location == RouteNames.onboardingPath;
       final isAuthRoute = location.startsWith('/auth');
+      // Legal accesible sin sesión (link desde el login).
+      final isLegal = location.startsWith(RouteNames.legalPath);
 
       if (!hasToken) {
-        // Sin sesión: solo se permiten splash, onboarding y auth.
-        if (isSplash || isOnboarding || isAuthRoute) return null;
+        // Sin sesión: solo splash, onboarding, auth y legal.
+        if (isSplash || isOnboarding || isAuthRoute || isLegal) return null;
         return RouteNames.authLoginPath;
       }
 
@@ -234,6 +237,11 @@ GoRouter buildRouter({
         path: RouteNames.settingsPath,
         name: RouteNames.settings,
         builder: (context, state) => const SettingsScreen(),
+      ),
+      GoRoute(
+        path: RouteNames.legalPath,
+        name: RouteNames.legal,
+        builder: (context, state) => const LegalScreen(),
       ),
     ],
   );

@@ -1,6 +1,4 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
@@ -13,15 +11,18 @@ import 'l10n/app_localizations.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Firebase (proyecto mercado-cercano-28190): Auth por teléfono/SMS,
-  // Cloud Firestore y Cloud Messaging. Si Firebase no está disponible
-  // (p. ej. emulador sin Google Play), la app sigue funcionando en modo
-  // demo con mock data.
+  // Firebase (proyecto mercado-cercano-28190): Auth (Google/Apple/Email),
+  // Cloud Firestore, Storage y Messaging. Si Firebase no está disponible
+  // (p. ej. emulador sin Google Play), la app no crashea: el catch deja
+  // que arranque y los flujos que dependen de Firebase fallan con gracia.
+  //
+  // NOTA: el permiso de notificaciones NO se pide aquí. Se solicita EN
+  // CONTEXTO al entrar a Alertas (ver PushNotificationService), como
+  // exigen las guías de App Store y Google Play.
   try {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
-    await _initPushNotifications();
   } catch (e) {
     debugPrint('Firebase no disponible: $e');
   }
@@ -30,20 +31,6 @@ Future<void> main() async {
   await Hive.initFlutter();
 
   runApp(const ProviderScope(child: MercadoCercanoApp()));
-}
-
-/// Firebase Cloud Messaging: pide permiso de notificaciones y registra
-/// el token del dispositivo (en producción se enviaría al backend para
-/// las alertas de precio).
-Future<void> _initPushNotifications() async {
-  final messaging = FirebaseMessaging.instance;
-  await messaging.requestPermission();
-  if (kDebugMode) {
-    // En iOS requiere APNs configurado; por eso va dentro del try/catch
-    // de main.
-    final token = await messaging.getToken();
-    debugPrint('FCM token: $token');
-  }
 }
 
 
