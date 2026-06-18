@@ -49,6 +49,17 @@ dev_dependencies:
   freezed: ^3.2.6-dev.1
   json_serializable: ^6.14.0
   riverpod_generator: ^4.0.4-dev.1
+  flutter_launcher_icons: ^0.14.1
+
+# Icono oficial de MercadoCercano: puesto/toldo blanco sobre verde bosque.
+# Regenerar con: dart run flutter_launcher_icons
+flutter_launcher_icons:
+  image_path: "assets/icon/app_icon.png"
+  android: true
+  ios: true
+  remove_alpha_ios: true
+  adaptive_icon_background: "#1B7A3D"
+  adaptive_icon_foreground: "assets/icon/app_icon_foreground.png"
 
 flutter:
   uses-material-design: true

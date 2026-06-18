@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Solo la figura, fondo TRANSPARENTE. Escalada al 80% sobre el centro
+       para dejar margen de seguridad ante el recorte adaptativo de Android. -->
+  <g transform="translate(512,512) scale(0.8) translate(-512,-512)">
+    <path d="M 350 430 L 350 712 L 674 712 L 674 430"
+          fill="none" stroke="#FFFFFF" stroke-width="38"
+          stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M 280 320
+             L 744 320
+             L 744 408
+             a 46.4 46.4 0 0 1 -92.8 0
+             a 46.4 46.4 0 0 1 -92.8 0
+             a 46.4 46.4 0 0 1 -92.8 0
+             a 46.4 46.4 0 0 1 -92.8 0
+             a 46.4 46.4 0 0 1 -92.8 0
+             L 280 320 Z"
+          fill="#FFFFFF"/>
+  </g>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <!-- Fondo verde bosque, cuadrado a sangre (la máscara del SO redondea) -->
+  <rect width="1024" height="1024" fill="#1B7A3D"/>
+
+  <!-- Puesto / cuerpo de la tienda: dos postes + base, frente abierto -->
+  <path d="M 350 430 L 350 712 L 674 712 L 674 430"
+        fill="none" stroke="#FFFFFF" stroke-width="38"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Toldo: techo recto + borde inferior ondulado (5 scallops) -->
+  <path d="M 280 320
+           L 744 320
+           L 744 408
+           a 46.4 46.4 0 0 1 -92.8 0
+           a 46.4 46.4 0 0 1 -92.8 0
+           a 46.4 46.4 0 0 1 -92.8 0
+           a 46.4 46.4 0 0 1 -92.8 0
+           a 46.4 46.4 0 0 1 -92.8 0
+           L 280 320 Z"
+        fill="#FFFFFF"/>
+</svg>
