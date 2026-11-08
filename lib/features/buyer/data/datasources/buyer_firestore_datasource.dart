@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../../core/constants/app_constants.dart';
 import '../../../../core/errors/app_exception.dart';
 import '../../../../core/firebase/firestore_service.dart';
+import '../../../../core/location/user_location_service.dart';
 import '../../../../core/storage/secure_storage.dart';
 import '../../../../shared/domain/entities/product_entity.dart';
 import '../../../../shared/domain/entities/vendor_entity.dart';
@@ -23,21 +24,32 @@ import 'buyer_remote_datasource.dart';
 ///   esto evita índices compuestos y queries imposibles en Firestore
 ///   (no soporta `contains` de texto).
 ///
-/// DISTANCIA: mientras no pidamos la ubicación real del comprador, la
-/// distancia se calcula con `Geolocator.distanceBetween` desde el centro
-/// de Ciudad de Guatemala (`AppConstants.guatemalaCityLat/Lng`) hasta las
-/// `coordinates` del vendedor. Cuando exista un servicio de ubicación,
-/// se inyectará aquí y solo cambia el punto de origen (geolocator ya es
-/// dependencia del proyecto).
+/// DISTANCIA: se calcula desde la ubicación REAL del comprador
+/// (`UserLocationService`, el MISMO origen que usa el mapa) hasta las
+/// `coordinates` del vendedor. Así un producto cercano al usuario aparece
+/// de forma consistente en Inicio/Búsqueda y en el mapa. Si el permiso de
+/// ubicación se niega, el servicio hace fallback silencioso al centro de
+/// Ciudad de Guatemala (igual que el mapa).
 class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
-  BuyerFirestoreDatasource(this._firestore, this._secureStorage);
+  BuyerFirestoreDatasource(
+    this._firestore,
+    this._secureStorage,
+    this._locationService,
+  );
 
   final FirestoreService _firestore;
   final SecureStorageService _secureStorage;
+  final UserLocationService _locationService;
 
   static const _productsCollection = 'products';
   static const _vendorsCollection = 'vendors';
   static const _reportsCollection = 'price_reports';
+
+  /// Tope de documentos leídos por búsqueda para no traer toda la
+  /// colección. Se piden los MÁS RECIENTES (≈ vigentes, por la ventana de
+  /// 24 h); el resto del filtrado y el orden por distancia van en cliente.
+  /// Subir si una zona supera este volumen (o migrar a geohashing).
+  static const _fetchLimit = 200;
 
   /// Distancia asignada cuando el vendedor no comparte coordenadas:
   /// queda fuera de cualquier radio razonable (igual que el mock).
@@ -48,6 +60,13 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
   /// compartida, así que se guarda junto al vendedor mapeado.
   final Map<String, ({VendorEntity vendor, bool isActive})> _vendorCache = {};
 
+  /// Origen (ubicación del comprador) cacheado para no pedir GPS en cada
+  /// búsqueda/detalle. TTL corto: suficiente para una ráfaga de búsquedas
+  /// sin quedar obsoleto si el usuario se mueve.
+  LatLng? _cachedOrigin;
+  DateTime? _originAt;
+  static const _originTtl = Duration(minutes: 2);
+
   // -------------------------------------------------------------------
   // Búsqueda
   // -------------------------------------------------------------------
@@ -57,19 +76,20 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
     String? query,
     required SearchFilters filters,
   }) async {
-    // Filtros que sí van al servidor (solo igualdades: no requieren
-    // índice compuesto en Firestore).
+    // En el SERVIDOR: solo `category` (igualdad indexable; el alta SIEMPRE
+    // lo escribe) + orden por `createdAt` desc + `limit` para acotar la
+    // lectura a los más recientes. `isAvailable`, la VIGENCIA, el radio,
+    // el precio, el rating y el orden por distancia van EN CLIENTE: así no
+    // se excluyen en silencio docs sin algún campo, el radio es opcional
+    // (los lejanos también se ven) y el toggle "Solo disponibles" funciona.
     final docs = await _firestore.getCollection(
       _productsCollection,
       queryBuilder: (q) {
         var built = q;
-        if (filters.onlyAvailable) {
-          built = built.where('isAvailable', isEqualTo: true);
-        }
         if (filters.category != null) {
           built = built.where('category', isEqualTo: filters.category!.name);
         }
-        return built;
+        return built.orderBy('createdAt', descending: true).limit(_fetchLimit);
       },
     );
 
@@ -78,9 +98,13 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
     // Cargar los vendedores referenciados (con cache en memoria).
     await _loadVendors(products.map((p) => p.vendorId).toSet());
 
+    // Mismo origen que el mapa: la ubicación real del comprador.
+    final origin = await _resolveOrigin();
+    final now = DateTime.now();
     final q = query?.trim().toLowerCase();
 
-    // Resto de los filtros EN CLIENTE (texto, precio, rating, radio).
+    // Resto de los filtros EN CLIENTE (visibilidad, texto, precio, rating,
+    // radio).
     final results = <ProductSearchResultModel>[];
     for (final product in products) {
       final cached = _vendorCache[product.vendorId];
@@ -88,8 +112,17 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
       if (cached == null || !cached.isActive) continue;
       final vendor = cached.vendor;
 
-      final distanceKm = _distanceKm(vendor);
-      if (distanceKm > filters.radiusKm) continue;
+      // Regla ÚNICA de visibilidad: la vigencia (24 h) es OBLIGATORIA
+      // siempre; la disponibilidad solo cuando el usuario pide "Solo
+      // disponibles" (default). Misma regla que el mapa y el perfil.
+      if (!product.isVigente(now)) continue;
+      if (filters.onlyAvailable && !product.isAvailable) continue;
+
+      final distanceKm = _distanceKm(vendor, origin);
+      // La cercanía NO es regla de visibilidad: por defecto NO se excluye
+      // nada por radio (los productos lejanos también se muestran). Solo
+      // se filtra si el usuario activó "Buscar solo cerca de mí".
+      if (filters.onlyNearby && distanceKm > filters.radiusKm) continue;
       if (filters.maxPrice != null && product.price > filters.maxPrice!) {
         continue;
       }
@@ -119,7 +152,8 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
     switch (sortBy) {
       case SortOrder.relevance:
         if (q != null && q.isNotEmpty) {
-          // Coincidencia más temprana en el nombre = más relevante.
+          // Coincidencia más temprana en el nombre = más relevante; a
+          // igualdad, el más cercano primero.
           results.sort((a, b) {
             final ia = a.product.name.toLowerCase().indexOf(q);
             final ib = b.product.name.toLowerCase().indexOf(q);
@@ -128,6 +162,10 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
             if (ra != rb) return ra.compareTo(rb);
             return a.distanceKm.compareTo(b.distanceKm);
           });
+        } else {
+          // Sin texto (Inicio o navegación por categoría): por defecto,
+          // los más cercanos primero (la cercanía ordena, no excluye).
+          results.sort((a, b) => a.distanceKm.compareTo(b.distanceKm));
         }
       case SortOrder.priceLow:
         results.sort((a, b) => a.product.price.compareTo(b.product.price));
@@ -170,11 +208,12 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
           statusCode: 404);
     }
 
+    final origin = await _resolveOrigin();
     return ProductSearchResultModel(
       // Reflejar localmente la vista recién registrada.
       product: product.copyWith(viewCount: product.viewCount + 1),
       vendor: cached.vendor,
-      distanceKm: _distanceKm(cached.vendor),
+      distanceKm: _distanceKm(cached.vendor, origin),
     );
   }
 
@@ -193,8 +232,9 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
     _vendorCache[vendorId] =
         (vendor: vendor, isActive: (doc['isActive'] as bool?) ?? true);
 
-    // Catálogo vigente: el filtro de expiración va en cliente porque
+    // Catálogo visible: la regla ÚNICA de visibilidad va en cliente porque
     // igualdad (vendorId) + rango (expiresAt) exigiría índice compuesto.
+    // Misma regla que Inicio/Búsqueda y el sheet del pin del mapa.
     final now = DateTime.now();
     final productDocs = await _firestore.getCollection(
       _productsCollection,
@@ -202,14 +242,15 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
     );
     final products = productDocs
         .map(_productFromDoc)
-        .where((p) => p.expiresAt.isAfter(now))
+        .where((p) => p.isVisibleToBuyer(now))
         .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
+    final origin = await _resolveOrigin();
     return VendorDetailModel(
       vendor: vendor,
       products: products,
-      distanceKm: _distanceKm(vendor),
+      distanceKm: _distanceKm(vendor, origin),
     );
   }
 
@@ -332,16 +373,33 @@ class BuyerFirestoreDatasource implements BuyerRemoteDatasource {
     }
   }
 
-  /// Distancia (km) desde el centro de Ciudad de Guatemala al vendedor.
-  /// Cuando exista la ubicación real del comprador, solo cambia el
-  /// punto de origen.
-  double _distanceKm(VendorEntity vendor) {
+  /// Ubicación del comprador (origen para distancias y radio), con caché
+  /// de [_originTtl] para no pedir GPS en cada llamada. Es el MISMO origen
+  /// que usa el mapa; si el permiso se niega, el servicio devuelve el
+  /// fallback a la capital.
+  Future<LatLng> _resolveOrigin() async {
+    final cached = _cachedOrigin;
+    final at = _originAt;
+    if (cached != null &&
+        at != null &&
+        DateTime.now().difference(at) < _originTtl) {
+      return cached;
+    }
+    final origin = await _locationService.getCurrentLocation();
+    _cachedOrigin = origin;
+    _originAt = DateTime.now();
+    return origin;
+  }
+
+  /// Distancia (km) desde [origin] (ubicación real del comprador) al
+  /// vendedor. Sin coordenadas del vendedor → fuera de cualquier radio.
+  double _distanceKm(VendorEntity vendor, LatLng origin) {
     final lat = vendor.latitude;
     final lng = vendor.longitude;
     if (lat == null || lng == null) return _unknownDistanceKm;
     final meters = Geolocator.distanceBetween(
-      AppConstants.guatemalaCityLat,
-      AppConstants.guatemalaCityLng,
+      origin.latitude,
+      origin.longitude,
       lat,
       lng,
     );

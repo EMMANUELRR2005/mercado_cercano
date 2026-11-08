@@ -224,7 +224,7 @@ class _Chart extends StatelessWidget {
               showTitles: true,
               reservedSize: 44,
               getTitlesWidget: (value, _) => Text(
-                'Q${value.toStringAsFixed(0)}',
+                Formatters.formatQuetzalCompact(value),
                 style: AppTextStyles.bodySmall
                     .copyWith(color: AppColors.textHint),
               ),

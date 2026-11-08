@@ -85,6 +85,29 @@ extension ProductCategoryX on ProductCategory {
   }
 }
 
+/// Reglas ÚNICAS de visibilidad de un producto para el comprador.
+///
+/// Una publicación vive `AppConstants.productExpiryHours` horas: pasado
+/// ese tiempo deja de mostrarse. Estas reglas son la FUENTE ÚNICA DE
+/// VERDAD usada por Inicio, Búsqueda, el sheet del pin del mapa y el
+/// perfil del vendedor, de modo que un producto aparezca (o se oculte)
+/// de forma CONSISTENTE en todos.
+///
+/// (La pertenencia a un vendedor ACTIVO se valida por separado, donde se
+/// cargan los vendedores: un producto cuyo vendedor no está activo
+/// tampoco se muestra.)
+extension ProductVisibilityX on ProductEntity {
+  /// La publicación sigue vigente (no ha vencido la ventana de 24 h).
+  bool isVigente([DateTime? now]) =>
+      expiresAt.isAfter(now ?? DateTime.now());
+
+  /// Visible para el comprador: vigente Y disponible (no agotado).
+  bool isVisibleToBuyer([DateTime? now]) {
+    final ref = now ?? DateTime.now();
+    return isAvailable && isVigente(ref);
+  }
+}
+
 /// Producto publicado por un vendedor.
 ///
 /// Los productos vencen a las `AppConstants.productExpiryHours` horas

@@ -5,11 +5,29 @@ import 'package:intl/intl.dart';
 class Formatters {
   Formatters._();
 
-  static final NumberFormat _quetzalFormat = NumberFormat('#,##0.00', 'es_GT');
+  /// Formato de moneda con locale FIJO `en_US`: punto (.) decimal, coma (,)
+  /// de miles y 2 decimales — el estilo usado en Guatemala. Es
+  /// INDEPENDIENTE del idioma de la app: cambiar la UI a inglés o español
+  /// NO altera el precio. NO usar el locale del dispositivo (`es`/`es_ES`
+  /// daría coma decimal: "Q 5,00"), que era justamente el bug.
+  static final NumberFormat _quetzalFormat = NumberFormat('#,##0.00', 'en_US');
 
-  /// Formatea un precio en Quetzales: `12.5 → "Q 12.50"`.
+  /// Igual que [_quetzalFormat] pero sin decimales forzados (para ejes de
+  /// gráficas): `5 → "5"`, `1234 → "1,234"`. Mismo locale fijo.
+  static final NumberFormat _quetzalCompactFormat =
+      NumberFormat('#,##0.##', 'en_US');
+
+  /// Formatea un precio en Quetzales: `12.5 → "Q 12.50"`. Punto decimal y
+  /// coma de miles SIEMPRE, sin importar el idioma de la app.
   static String formatQuetzal(double amount) {
     return 'Q ${_quetzalFormat.format(amount)}';
+  }
+
+  /// Precio compacto para ejes de gráficas (sin decimales forzados):
+  /// `5 → "Q 5"`, `1234 → "Q 1,234"`. Mismo formato central (no parchear
+  /// con strings sueltos en las pantallas).
+  static String formatQuetzalCompact(double amount) {
+    return 'Q ${_quetzalCompactFormat.format(amount)}';
   }
 
   /// Formatea una distancia en metros: `350 → "350 m"`, `1200 → "1.2 km"`.

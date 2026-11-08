@@ -1,7 +1,7 @@
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../../../core/constants/app_constants.dart';
+import '../constants/app_constants.dart';
 
 /// Resultado del último intento de acceder a la ubicación. Permite a la
 /// UI decidir qué pantalla de configuración abrir.
@@ -19,6 +19,10 @@ enum LocationAccessStatus {
 }
 
 /// Servicio de ubicación del comprador.
+///
+/// Es un servicio TRANSVERSAL (core): lo consumen tanto el mapa como el
+/// comprador (Inicio/Búsqueda), de modo que las distancias y el radio se
+/// midan desde el MISMO origen en todas las pantallas.
 ///
 /// PRIVACIDAD: la ubicación del comprador nunca se persiste — solo en
 /// memoria. No se escribe en storage, base de datos ni se envía a

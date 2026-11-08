@@ -24,6 +24,7 @@ final buyerRemoteDatasourceProvider = Provider<BuyerRemoteDatasource>((ref) {
     return BuyerFirestoreDatasource(
       ref.watch(firestoreServiceProvider),
       ref.watch(secureStorageProvider),
+      ref.watch(userLocationServiceProvider),
     );
   }
   return BuyerRemoteDatasourceImpl(ref.watch(dioClientProvider));

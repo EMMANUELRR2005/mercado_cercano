@@ -14,7 +14,11 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SearchFilters {
 
- double get radiusKm; double? get maxPrice; double get minRating; bool get onlyAvailable; ProductCategory? get category; SortOrder get sortBy;
+ double get radiusKm;/// Si es `true`, oculta los productos a más de [radiusKm]. Por defecto
+/// `false`: se muestran TODOS los productos (cercanos y lejanos) y la
+/// cercanía solo ORDENA (más cercanos primero). La cercanía NO forma
+/// parte de la regla de visibilidad.
+ bool get onlyNearby; double? get maxPrice; double get minRating; bool get onlyAvailable; ProductCategory? get category; SortOrder get sortBy;
 /// Create a copy of SearchFilters
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -25,16 +29,16 @@ $SearchFiltersCopyWith<SearchFilters> get copyWith => _$SearchFiltersCopyWithImp
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchFilters&&(identical(other.radiusKm, radiusKm) || other.radiusKm == radiusKm)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.minRating, minRating) || other.minRating == minRating)&&(identical(other.onlyAvailable, onlyAvailable) || other.onlyAvailable == onlyAvailable)&&(identical(other.category, category) || other.category == category)&&(identical(other.sortBy, sortBy) || other.sortBy == sortBy));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is SearchFilters&&(identical(other.radiusKm, radiusKm) || other.radiusKm == radiusKm)&&(identical(other.onlyNearby, onlyNearby) || other.onlyNearby == onlyNearby)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.minRating, minRating) || other.minRating == minRating)&&(identical(other.onlyAvailable, onlyAvailable) || other.onlyAvailable == onlyAvailable)&&(identical(other.category, category) || other.category == category)&&(identical(other.sortBy, sortBy) || other.sortBy == sortBy));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,radiusKm,maxPrice,minRating,onlyAvailable,category,sortBy);
+int get hashCode => Object.hash(runtimeType,radiusKm,onlyNearby,maxPrice,minRating,onlyAvailable,category,sortBy);
 
 @override
 String toString() {
-  return 'SearchFilters(radiusKm: $radiusKm, maxPrice: $maxPrice, minRating: $minRating, onlyAvailable: $onlyAvailable, category: $category, sortBy: $sortBy)';
+  return 'SearchFilters(radiusKm: $radiusKm, onlyNearby: $onlyNearby, maxPrice: $maxPrice, minRating: $minRating, onlyAvailable: $onlyAvailable, category: $category, sortBy: $sortBy)';
 }
 
 
@@ -45,7 +49,7 @@ abstract mixin class $SearchFiltersCopyWith<$Res>  {
   factory $SearchFiltersCopyWith(SearchFilters value, $Res Function(SearchFilters) _then) = _$SearchFiltersCopyWithImpl;
 @useResult
 $Res call({
- double radiusKm, double? maxPrice, double minRating, bool onlyAvailable, ProductCategory? category, SortOrder sortBy
+ double radiusKm, bool onlyNearby, double? maxPrice, double minRating, bool onlyAvailable, ProductCategory? category, SortOrder sortBy
 });
 
 
@@ -62,10 +66,11 @@ class _$SearchFiltersCopyWithImpl<$Res>
 
 /// Create a copy of SearchFilters
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? radiusKm = null,Object? maxPrice = freezed,Object? minRating = null,Object? onlyAvailable = null,Object? category = freezed,Object? sortBy = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? radiusKm = null,Object? onlyNearby = null,Object? maxPrice = freezed,Object? minRating = null,Object? onlyAvailable = null,Object? category = freezed,Object? sortBy = null,}) {
   return _then(_self.copyWith(
 radiusKm: null == radiusKm ? _self.radiusKm : radiusKm // ignore: cast_nullable_to_non_nullable
-as double,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
+as double,onlyNearby: null == onlyNearby ? _self.onlyNearby : onlyNearby // ignore: cast_nullable_to_non_nullable
+as bool,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
 as double?,minRating: null == minRating ? _self.minRating : minRating // ignore: cast_nullable_to_non_nullable
 as double,onlyAvailable: null == onlyAvailable ? _self.onlyAvailable : onlyAvailable // ignore: cast_nullable_to_non_nullable
 as bool,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable
@@ -155,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double radiusKm,  double? maxPrice,  double minRating,  bool onlyAvailable,  ProductCategory? category,  SortOrder sortBy)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( double radiusKm,  bool onlyNearby,  double? maxPrice,  double minRating,  bool onlyAvailable,  ProductCategory? category,  SortOrder sortBy)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SearchFilters() when $default != null:
-return $default(_that.radiusKm,_that.maxPrice,_that.minRating,_that.onlyAvailable,_that.category,_that.sortBy);case _:
+return $default(_that.radiusKm,_that.onlyNearby,_that.maxPrice,_that.minRating,_that.onlyAvailable,_that.category,_that.sortBy);case _:
   return orElse();
 
 }
@@ -176,10 +181,10 @@ return $default(_that.radiusKm,_that.maxPrice,_that.minRating,_that.onlyAvailabl
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double radiusKm,  double? maxPrice,  double minRating,  bool onlyAvailable,  ProductCategory? category,  SortOrder sortBy)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( double radiusKm,  bool onlyNearby,  double? maxPrice,  double minRating,  bool onlyAvailable,  ProductCategory? category,  SortOrder sortBy)  $default,) {final _that = this;
 switch (_that) {
 case _SearchFilters():
-return $default(_that.radiusKm,_that.maxPrice,_that.minRating,_that.onlyAvailable,_that.category,_that.sortBy);case _:
+return $default(_that.radiusKm,_that.onlyNearby,_that.maxPrice,_that.minRating,_that.onlyAvailable,_that.category,_that.sortBy);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -196,10 +201,10 @@ return $default(_that.radiusKm,_that.maxPrice,_that.minRating,_that.onlyAvailabl
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double radiusKm,  double? maxPrice,  double minRating,  bool onlyAvailable,  ProductCategory? category,  SortOrder sortBy)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( double radiusKm,  bool onlyNearby,  double? maxPrice,  double minRating,  bool onlyAvailable,  ProductCategory? category,  SortOrder sortBy)?  $default,) {final _that = this;
 switch (_that) {
 case _SearchFilters() when $default != null:
-return $default(_that.radiusKm,_that.maxPrice,_that.minRating,_that.onlyAvailable,_that.category,_that.sortBy);case _:
+return $default(_that.radiusKm,_that.onlyNearby,_that.maxPrice,_that.minRating,_that.onlyAvailable,_that.category,_that.sortBy);case _:
   return null;
 
 }
@@ -211,10 +216,15 @@ return $default(_that.radiusKm,_that.maxPrice,_that.minRating,_that.onlyAvailabl
 
 
 class _SearchFilters implements SearchFilters {
-  const _SearchFilters({this.radiusKm = 5.0, this.maxPrice, this.minRating = 0.0, this.onlyAvailable = true, this.category, this.sortBy = SortOrder.relevance});
+  const _SearchFilters({this.radiusKm = 5.0, this.onlyNearby = false, this.maxPrice, this.minRating = 0.0, this.onlyAvailable = true, this.category, this.sortBy = SortOrder.relevance});
   
 
 @override@JsonKey() final  double radiusKm;
+/// Si es `true`, oculta los productos a más de [radiusKm]. Por defecto
+/// `false`: se muestran TODOS los productos (cercanos y lejanos) y la
+/// cercanía solo ORDENA (más cercanos primero). La cercanía NO forma
+/// parte de la regla de visibilidad.
+@override@JsonKey() final  bool onlyNearby;
 @override final  double? maxPrice;
 @override@JsonKey() final  double minRating;
 @override@JsonKey() final  bool onlyAvailable;
@@ -231,16 +241,16 @@ _$SearchFiltersCopyWith<_SearchFilters> get copyWith => __$SearchFiltersCopyWith
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchFilters&&(identical(other.radiusKm, radiusKm) || other.radiusKm == radiusKm)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.minRating, minRating) || other.minRating == minRating)&&(identical(other.onlyAvailable, onlyAvailable) || other.onlyAvailable == onlyAvailable)&&(identical(other.category, category) || other.category == category)&&(identical(other.sortBy, sortBy) || other.sortBy == sortBy));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _SearchFilters&&(identical(other.radiusKm, radiusKm) || other.radiusKm == radiusKm)&&(identical(other.onlyNearby, onlyNearby) || other.onlyNearby == onlyNearby)&&(identical(other.maxPrice, maxPrice) || other.maxPrice == maxPrice)&&(identical(other.minRating, minRating) || other.minRating == minRating)&&(identical(other.onlyAvailable, onlyAvailable) || other.onlyAvailable == onlyAvailable)&&(identical(other.category, category) || other.category == category)&&(identical(other.sortBy, sortBy) || other.sortBy == sortBy));
 }
 
 
 @override
-int get hashCode => Object.hash(runtimeType,radiusKm,maxPrice,minRating,onlyAvailable,category,sortBy);
+int get hashCode => Object.hash(runtimeType,radiusKm,onlyNearby,maxPrice,minRating,onlyAvailable,category,sortBy);
 
 @override
 String toString() {
-  return 'SearchFilters(radiusKm: $radiusKm, maxPrice: $maxPrice, minRating: $minRating, onlyAvailable: $onlyAvailable, category: $category, sortBy: $sortBy)';
+  return 'SearchFilters(radiusKm: $radiusKm, onlyNearby: $onlyNearby, maxPrice: $maxPrice, minRating: $minRating, onlyAvailable: $onlyAvailable, category: $category, sortBy: $sortBy)';
 }
 
 
@@ -251,7 +261,7 @@ abstract mixin class _$SearchFiltersCopyWith<$Res> implements $SearchFiltersCopy
   factory _$SearchFiltersCopyWith(_SearchFilters value, $Res Function(_SearchFilters) _then) = __$SearchFiltersCopyWithImpl;
 @override @useResult
 $Res call({
- double radiusKm, double? maxPrice, double minRating, bool onlyAvailable, ProductCategory? category, SortOrder sortBy
+ double radiusKm, bool onlyNearby, double? maxPrice, double minRating, bool onlyAvailable, ProductCategory? category, SortOrder sortBy
 });
 
 
@@ -268,10 +278,11 @@ class __$SearchFiltersCopyWithImpl<$Res>
 
 /// Create a copy of SearchFilters
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? radiusKm = null,Object? maxPrice = freezed,Object? minRating = null,Object? onlyAvailable = null,Object? category = freezed,Object? sortBy = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? radiusKm = null,Object? onlyNearby = null,Object? maxPrice = freezed,Object? minRating = null,Object? onlyAvailable = null,Object? category = freezed,Object? sortBy = null,}) {
   return _then(_SearchFilters(
 radiusKm: null == radiusKm ? _self.radiusKm : radiusKm // ignore: cast_nullable_to_non_nullable
-as double,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
+as double,onlyNearby: null == onlyNearby ? _self.onlyNearby : onlyNearby // ignore: cast_nullable_to_non_nullable
+as bool,maxPrice: freezed == maxPrice ? _self.maxPrice : maxPrice // ignore: cast_nullable_to_non_nullable
 as double?,minRating: null == minRating ? _self.minRating : minRating // ignore: cast_nullable_to_non_nullable
 as double,onlyAvailable: null == onlyAvailable ? _self.onlyAvailable : onlyAvailable // ignore: cast_nullable_to_non_nullable
 as bool,category: freezed == category ? _self.category : category // ignore: cast_nullable_to_non_nullable

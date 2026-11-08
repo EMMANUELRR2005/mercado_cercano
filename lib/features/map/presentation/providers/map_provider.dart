@@ -6,7 +6,6 @@ import '../../data/datasources/map_firestore_datasource.dart';
 import '../../data/datasources/map_remote_datasource.dart';
 import '../../data/datasources/map_websocket_datasource.dart';
 import '../../data/datasources/place_search_service.dart';
-import '../../data/datasources/user_location_service.dart';
 import '../../data/datasources/vendor_products_service.dart';
 import '../../data/repositories/map_repository_impl.dart';
 import '../../domain/repositories/map_repository.dart';
@@ -43,14 +42,6 @@ final mapWebsocketDatasourceProvider = Provider<MapWebsocketDatasource>((ref) {
   final datasource = MapWebsocketDatasourceImpl();
   ref.onDispose(datasource.dispose);
   return datasource;
-});
-
-/// Servicio de ubicación del comprador.
-///
-/// PRIVACIDAD: la ubicación del comprador nunca se persiste — solo en
-/// memoria.
-final userLocationServiceProvider = Provider<UserLocationService>((ref) {
-  return UserLocationServiceImpl();
 });
 
 /// Catálogo en vivo de un vendedor (para el bottom sheet del pin).

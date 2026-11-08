@@ -238,20 +238,44 @@ class _FiltersSheetState extends State<_FiltersSheet> {
             const SizedBox(height: 16),
             const Text('Filtros', style: AppTextStyles.titleLarge),
             const SizedBox(height: 16),
-            Text(
-              'Radio de búsqueda: ${_filters.radiusKm.toStringAsFixed(0)} km',
-              style: AppTextStyles.titleSmall,
-            ),
-            Slider(
-              value: _filters.radiusKm.clamp(1, 20),
-              min: 1,
-              max: 20,
-              divisions: 19,
-              activeColor: AppColors.primaryGreen,
-              label: '${_filters.radiusKm.toStringAsFixed(0)} km',
+            // La cercanía es OPCIONAL: por defecto se muestran todos los
+            // productos (cercanos y lejanos), ordenados por cercanía. El
+            // radio solo aplica si el usuario activa este switch.
+            SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              activeThumbColor: AppColors.primaryGreen,
+              title: const Text(
+                'Buscar solo cerca de mí',
+                style: AppTextStyles.titleSmall,
+              ),
+              subtitle: Text(
+                _filters.onlyNearby
+                    ? 'Oculta lo que esté a más de '
+                        '${_filters.radiusKm.toStringAsFixed(0)} km'
+                    : 'Mostrando todo (los más cercanos primero)',
+                style: AppTextStyles.bodySmall
+                    .copyWith(color: AppColors.textSecondary),
+              ),
+              value: _filters.onlyNearby,
               onChanged: (v) =>
-                  setState(() => _filters = _filters.copyWith(radiusKm: v)),
+                  setState(() => _filters = _filters.copyWith(onlyNearby: v)),
             ),
+            if (_filters.onlyNearby) ...[
+              Text(
+                'Radio: ${_filters.radiusKm.toStringAsFixed(0)} km',
+                style: AppTextStyles.titleSmall,
+              ),
+              Slider(
+                value: _filters.radiusKm.clamp(1, 20),
+                min: 1,
+                max: 20,
+                divisions: 19,
+                activeColor: AppColors.primaryGreen,
+                label: '${_filters.radiusKm.toStringAsFixed(0)} km',
+                onChanged: (v) =>
+                    setState(() => _filters = _filters.copyWith(radiusKm: v)),
+              ),
+            ],
             const SizedBox(height: 8),
             const Text('Precio máximo', style: AppTextStyles.titleSmall),
             const SizedBox(height: 8),

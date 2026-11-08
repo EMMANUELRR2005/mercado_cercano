@@ -38,7 +38,9 @@ class VendorProductsService {
       final now = DateTime.now();
       final products = docs
           .map(_fromDoc)
-          .where((p) => p.isAvailable && p.expiresAt.isAfter(now))
+          // Regla ÚNICA de visibilidad (vigente + disponible), compartida
+          // con Inicio, Búsqueda y el perfil del vendedor.
+          .where((p) => p.isVisibleToBuyer(now))
           .toList()
         ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
       if (countViews) {

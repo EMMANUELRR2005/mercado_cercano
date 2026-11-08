@@ -1,6 +1,6 @@
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 
-import '../../data/datasources/user_location_service.dart';
+import '../../../../core/location/user_location_service.dart';
 
 /// Resultado de pedir la ubicación: posición (real o fallback) y si el
 /// permiso fue denegado / GPS apagado.

@@ -31,6 +31,12 @@ extension SortOrderX on SortOrder {
 abstract class SearchFilters with _$SearchFilters {
   const factory SearchFilters({
     @Default(5.0) double radiusKm,
+
+    /// Si es `true`, oculta los productos a más de [radiusKm]. Por defecto
+    /// `false`: se muestran TODOS los productos (cercanos y lejanos) y la
+    /// cercanía solo ORDENA (más cercanos primero). La cercanía NO forma
+    /// parte de la regla de visibilidad.
+    @Default(false) bool onlyNearby,
     double? maxPrice,
     @Default(0.0) double minRating,
     @Default(true) bool onlyAvailable,

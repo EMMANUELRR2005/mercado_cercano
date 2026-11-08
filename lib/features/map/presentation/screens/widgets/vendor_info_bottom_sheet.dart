@@ -51,11 +51,21 @@ class _VendorInfoBottomSheetState extends ConsumerState<VendorInfoBottomSheet> {
   @override
   void initState() {
     super.initState();
+    // Inicialización DEFENSIVA: `_productsStream` es `late final`; si la
+    // creación fallara (p. ej. el provider Firestore lanza), dejarlo sin
+    // asignar tiraría LateInitializationError en build y el sheet ENTERO
+    // quedaría en blanco. Con el try/catch, la falla se convierte en un
+    // stream de error que el StreamBuilder muestra como mensaje, y el
+    // resto del detalle del vendedor (nombre, contacto) siempre se ve.
     // countViews: los productos del preview suman una vista (una sola
     // vez por sesión por producto).
-    _productsStream = ref
-        .read(vendorProductsServiceProvider)
-        .watch(widget.vendorLocation.vendor.id, countViews: true);
+    try {
+      _productsStream = ref
+          .read(vendorProductsServiceProvider)
+          .watch(widget.vendorLocation.vendor.id, countViews: true);
+    } catch (error) {
+      _productsStream = Stream<List<ProductEntity>>.error(error);
+    }
   }
 
   // -----------------------------------------------------------------
@@ -357,6 +367,17 @@ class _VendorInfoBottomSheetState extends ConsumerState<VendorInfoBottomSheet> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const _ProductsShimmer();
+              }
+              // Falla de la consulta en vivo: mensaje claro, nunca en blanco.
+              if (snapshot.hasError) {
+                return Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    'No se pudieron cargar los productos.',
+                    style: AppTextStyles.bodySmall
+                        .copyWith(color: AppColors.errorRed),
+                  ),
+                );
               }
               final products = snapshot.data ?? const <ProductEntity>[];
               if (products.isEmpty) {
